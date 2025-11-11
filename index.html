@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Film Potha - Movie Search</title>
-    <meta name="description" content="Search and discover movies with Film Potha - Browse popular movies and get detailed information">
+    <title>Film Potha - Movie Search & Browse by Category</title>
+    <meta name="description" content="Search and discover movies with Film Potha - Browse by categories, genres, and find your favorite films">
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -31,17 +31,33 @@
             <button id="search-button" aria-label="Search">Search</button>
         </div>
 
+        <!-- Categories Section -->
+        <section class="categories-section">
+            <h3 class="section-title">🏷️ Browse by Category</h3>
+            <div id="categories-container" class="categories-grid">
+                <!-- Category buttons will be injected here by JS -->
+            </div>
+        </section>
+
         <!-- Section for Popular Movies (loads on start) -->
         <section id="popular-movies" class="results-section">
-            <h3 class="section-title">Popular Movies</h3>
+            <h3 class="section-title">🔥 Popular Movies</h3>
             <div id="popular-container" class="movie-grid">
                 <!-- Popular movies will be injected here by JS -->
             </div>
         </section>
 
+        <!-- Section for Category Movies (hidden by default) -->
+        <section id="category-movies" class="results-section" style="display:none;">
+            <h3 class="section-title" id="category-title">Category Movies</h3>
+            <div id="category-movies-container" class="movie-grid">
+                <!-- Category movies will be injected here by JS -->
+            </div>
+        </section>
+
         <!-- Section for Search Results (hidden by default) -->
         <section id="search-results" class="results-section" style="display:none;">
-            <h3 class="section-title">Your Results</h3>
+            <h3 class="section-title">🔍 Your Results</h3>
             <div id="results-container" class="movie-grid">
                 <!-- Search results will be injected here by JS -->
             </div>
