@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Finder</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header with Title and Theme Toggle -->
+        <header class="header-container">
+            <h2>Movie Finder</h2>
+            <button id="theme-toggle">Light Mode</button>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search for a movie..." autocomplete="off">
+            <button id="search-button">Search</button>
+        </div>
+
+        <!-- Section for Popular Movies (loads on start) -->
+        <section id="popular-movies" class="results-section">
+            <h3 class="section-title">Popular Movies</h3>
+            <div id="popular-container" class="movie-grid">
+                <!-- Popular movies will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Section for Search Results (hidden by default) -->
+        <section id="search-results" class="results-section" style="display:none;">
+            <h3 class="section-title">Your Results</h3>
+            <div id="results-container" class="movie-grid">
+                <!-- Search results will be injected here by JS -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Movie Details Modal (Popup) -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close">&times;</button>
+            <div id="modal-body">
+                <!-- Movie details will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
