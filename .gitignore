@@ -1,0 +1,10 @@
+# API Configuration
+config.js
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
