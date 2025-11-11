@@ -1,0 +1,347 @@
+/* Light mode variables (Copied from your weather app style) */
+:root {
+  --background-color: linear-gradient(to bottom, #a6c1ee, #fbc2eb);
+  --text-color: #222;
+  --secondary-text-color: #555;
+  --container-bg: rgba(255, 255, 255, 0.8);
+  --card-bg: rgba(255, 255, 255, 0.75);
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --input-border: #d1d8e0;
+  --input-focus: #6b48ff;
+  --button-bg: linear-gradient(135deg, rgba(107, 72, 255, 0.8), rgba(0, 212, 255, 0.8));
+  --button-hover-bg: linear-gradient(135deg, rgba(0, 212, 255, 0.9), rgba(107, 72, 255, 0.9));
+  --button-text: #ffffff;
+  --shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  --glow-color: rgba(107, 72, 255, 0.7);
+  --scrollbar-track: #e0e0e0;
+  --scrollbar-thumb: #6b48ff;
+  --scrollbar-thumb-hover: #00d4ff;
+}
+
+/* Dark mode variables (Copied from your weather app style) */
+body.dark-mode {
+  --background-color: linear-gradient(to bottom, #1a1a2e, #16213e);
+  --text-color: #f0f0f0;
+  --secondary-text-color: #b0b0b0;
+  --container-bg: rgba(0, 0, 0, 0.6);
+  --card-bg: rgba(44, 44, 44, 0.65);
+  --input-bg: rgba(58, 58, 58, 0.8);
+  --input-border: #4a4a4a;
+  --input-focus: #ff6f61;
+  --button-bg: linear-gradient(135deg, rgba(42, 82, 152, 0.8), rgba(255, 111, 97, 0.8));
+  --button-hover-bg: linear-gradient(135deg, rgba(255, 111, 97, 0.9), rgba(42, 82, 152, 0.9));
+  --button-text: #f0f0f0;
+  --shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  --glow-color: rgba(255, 111, 97, 0.7);
+  --scrollbar-track: #2a2a2a;
+  --scrollbar-thumb: #2a5298;
+  --scrollbar-thumb-hover: #ff6f61;
+}
+
+/* General styles (Adapted from your weather app style) */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  min-height: 100vh;
+  padding: 20px;
+  background: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+.container {
+  background: var(--container-bg);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 1200px; /* Wider for movie grid */
+  margin: 0 auto;
+  backdrop-filter: blur(10px);
+  transition: background-color 0.5s ease;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* Added for responsiveness */
+    gap: 10px; /* Added for spacing */
+}
+
+.header-container h2 {
+    color: var(--text-color);
+    font-size: 2rem;
+    transition: text-shadow 0.3s ease;
+}
+.header-container h2:hover {
+    text-shadow: 0 0 5px var(--glow-color), 0 0 15px var(--glow-color);
+}
+
+.search-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+#search-input {
+  flex-grow: 1;
+  padding: 12px 16px;
+  font-size: 1.1rem;
+  border: 2px solid var(--input-border);
+  border-radius: 8px;
+  outline: none;
+  background: var(--input-bg);
+  color: var(--text-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#search-input:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 8px var(--input-focus);
+}
+
+#search-button,
+#theme-toggle {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  white-space: nowrap; /* Prevent text wrap */
+}
+
+#search-button:hover,
+#theme-toggle:hover {
+  background: var(--button-hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Movie Grid and Card Styles */
+.results-section {
+    margin-top: 20px;
+}
+
+.section-title {
+    color: var(--text-color);
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    text-align: left;
+}
+
+.movie-grid {
+    display: grid;
+    /* Responsive grid */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .movie-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+
+.movie-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.movie-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px var(--glow-color);
+    z-index: 10;
+}
+
+.movie-card img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    display: block;
+}
+
+.movie-info {
+    padding: 15px;
+    text-align: left;
+}
+
+.movie-info h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.movie-info span {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--secondary-text-color);
+}
+
+/* Rating colors */
+.movie-info span.green { color: #2ecc71; }
+.movie-info span.orange { color: #e67e22; }
+.movie-info span.red { color: #e74c3c; }
+
+
+/* Modal (Popup) Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--container-bg);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    color: var(--text-color);
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.modal-close:hover {
+    transform: scale(1.2);
+    color: var(--glow-color);
+}
+
+#modal-body {
+    display: flex;
+    gap: 30px;
+}
+
+#modal-body img {
+    width: 300px;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+.modal-details h2 {
+    font-size: 2.2rem;
+    margin-bottom: 15px;
+}
+
+.modal-details p {
+    font-size: 1rem;
+    color: var(--secondary-text-color);
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.modal-details .info-item {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.modal-details .info-item strong {
+    color: var(--text-color);
+}
+
+.modal-trailer {
+    margin-top: 20px;
+}
+
+.modal-trailer h3 {
+    margin-bottom: 10px;
+}
+
+.modal-trailer iframe {
+    width: 100%;
+    height: 315px;
+    border: none;
+    border-radius: 8px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive modal for small screens */
+@media (max-width: 768px) {
+    #modal-body {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .modal-details {
+        text-align: left;
+    }
+    #modal-body img {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+    }
+}
+
+/* Scrollbar styling (From your weather app) */
+body::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+body::-webkit-scrollbar-track,
+.modal-content::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 4px;
+}
+
+body::-webkit-scrollbar-thumb,
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+body::-webkit-scrollbar-thumb:hover,
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
