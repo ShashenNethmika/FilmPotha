@@ -508,11 +508,16 @@ body {
     gap: 15px;
     overflow-x: auto;
     padding-bottom: 10px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; /* Firefox */
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .cast-card {
     min-width: 100px;
     text-align: center;
+    scroll-snap-align: start;
 }
 
 .cast-card img {
@@ -536,6 +541,10 @@ body {
     margin-top: 4px;
 }
 
+.cast-container::-webkit-scrollbar {
+    display: none;
+}
+
 /* Similar section in modal */
 .modal-similar {
     margin-top: 30px;
@@ -553,12 +562,17 @@ body {
     gap: 15px;
     overflow-x: auto;
     padding-bottom: 10px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; /* Firefox */
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .similar-card {
     min-width: 120px;
     cursor: pointer;
     transition: transform 0.3s ease;
+    scroll-snap-align: start;
 }
 
 .similar-card:hover {
@@ -581,6 +595,10 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.similar-container::-webkit-scrollbar {
+    display: none;
 }
 
 /* Scrollbar for horizontal scrolling */
@@ -707,4 +725,25 @@ body::-webkit-scrollbar-thumb,
 body::-webkit-scrollbar-thumb:hover,
 .modal-content::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
+}
+
+/* Footer styles */
+footer {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--secondary-text-color);
+    font-size: 0.9rem;
+}
+
+.blinking-heart {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
 }
