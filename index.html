@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Film Potha</title>
+    <title>Film Potha - Movie Search</title>
+    <meta name="description" content="Search and discover movies with Film Potha - Browse popular movies and get detailed information">
+    
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
@@ -15,14 +17,18 @@
     <div class="container">
         <!-- Header with Title and Theme Toggle -->
         <header class="header-container">
-            <h2>Film Potha</h2>
-            <button id="theme-toggle">Light Mode</button>
+            <h2>🎬 Film Potha</h2>
+            <button id="theme-toggle" aria-label="Toggle theme">Light Mode</button>
         </header>
 
         <!-- Search Bar -->
         <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search for a movie..." autocomplete="off">
-            <button id="search-button">Search</button>
+            <input type="text" 
+                   id="search-input" 
+                   placeholder="Search for a movie..." 
+                   autocomplete="off"
+                   aria-label="Search movies">
+            <button id="search-button" aria-label="Search">Search</button>
         </div>
 
         <!-- Section for Popular Movies (loads on start) -->
@@ -43,16 +49,19 @@
     </div>
 
     <!-- Movie Details Modal (Popup) -->
-    <div id="modal-overlay" class="modal-overlay">
+    <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-content">
-            <button class="modal-close" id="modal-close">&times;</button>
+            <button class="modal-close" id="modal-close" aria-label="Close modal">&times;</button>
             <div id="modal-body">
                 <!-- Movie details will be injected here by JS -->
             </div>
         </div>
     </div>
 
-    <!-- JavaScript -->
+    <!-- Config (Optional - for API keys) -->
+    <script src="config.js"></script>
+    
+    <!-- Main JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
