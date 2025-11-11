@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
     // --- API Configuration ---
-    // Import from config.js for better security
     const tmdbApiKey = typeof CONFIG !== 'undefined' ? CONFIG.tmdbApiKey : '70d39d783bf0ed1a77563490c832c0a2';
     const omdbApiKey = typeof CONFIG !== 'undefined' ? CONFIG.omdbApiKey : '84c5ac60';
     
@@ -8,14 +7,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const baseImageUrl = 'https://image.tmdb.org/t/p/w500';
     const omdbApiUrl = 'https://www.omdbapi.com/';
 
+    // Genre/Category mapping
+    const genres = [
+        { id: 28, name: 'Action', emoji: '💥' },
+        { id: 12, name: 'Adventure', emoji: '🏝️' },
+        { id: 16, name: 'Animation', emoji: '🎬' },
+        { id: 35, name: 'Comedy', emoji: '😂' },
+        { id: 80, name: 'Crime', emoji: '🕵️' },
+        { id: 18, name: 'Drama', emoji: '🎭' },
+        { id: 14, name: 'Fantasy', emoji: '✨' },
+        { id: 27, name: 'Horror', emoji: '👻' },
+        { id: 10402, name: 'Music', emoji: '🎵' },
+        { id: 9648, name: 'Mystery', emoji: '🔍' },
+        { id: 10749, name: 'Romance', emoji: '❤️' },
+        { id: 878, name: 'Sci-Fi', emoji: '🚀' },
+        { id: 53, name: 'Thriller', emoji: '😱' },
+        { id: 10752, name: 'War', emoji: '⚔️' }
+    ];
+
     // --- DOM Elements ---
     const themeToggleButton = document.getElementById("theme-toggle");
     const searchInput = document.getElementById("search-input");
     const searchButton = document.getElementById("search-button");
+    const categoriesContainer = document.getElementById("categories-container");
     const popularContainer = document.getElementById("popular-container");
     const resultsContainer = document.getElementById("results-container");
+    const categoryMoviesContainer = document.getElementById("category-movies-container");
     const popularSection = document.getElementById("popular-movies");
     const searchSection = document.getElementById("search-results");
+    const categorySection = document.getElementById("category-movies");
+    const categoryTitle = document.getElementById("category-title");
 
     // Modal Elements
     const modalOverlay = document.getElementById("modal-overlay");
@@ -25,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // State management
     let currentModalId = null;
     let searchDebounceTimer = null;
+    let currentGenreId = null;
 
     // --- Theme Toggle ---
     const savedTheme = localStorage.getItem("theme");
@@ -44,9 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Utility Functions ---
 
-    /**
-     * Shows loading spinner in container
-     */
     function showLoading(container) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--secondary-text-color);">
@@ -56,9 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     }
 
-    /**
-     * Shows error message in container
-     */
     function showError(container, message) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--secondary-text-color);">
@@ -69,10 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Core Functions ---
 
-    /**
-     * Fetches data from the TMDb API
-     * @param {string} endpoint - The API endpoint (e.g., '/movie/popular')
-     */
     async function fetchFromApi(endpoint) {
         if (!tmdbApiKey || tmdbApiKey === 'YOUR_API_KEY_HERE') {
             console.error("TMDb API Key not set!");
@@ -96,10 +108,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /**
-     * Fetches data from OMDb API by IMDb ID
-     * @param {string} imdbId - The IMDb ID of the movie
-     */
     async function fetchFromOmdbApi(imdbId) {
         if (!omdbApiKey || omdbApiKey === 'YOUR_OMDB_API_KEY_HERE') {
             console.warn("OMDb API Key not set. Skipping OMDb details.");
@@ -125,11 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /**
-     * Creates and displays movie cards in the grid
-     * @param {Array} movies - Array of movie objects from the API
-     * @param {HTMLElement} container - The container to inject cards into
-     */
     function displayMovies(movies, container) {
         container.innerHTML = "";
 
@@ -168,10 +171,57 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    /**
-     * Handles clicks on movie cards
-     * @param {Event} event - The click event
-     */
+    // --- Category Functions ---
+
+    function displayCategories() {
+        categoriesContainer.innerHTML = '';
+        
+        genres.forEach(genre => {
+            const categoryBtn = document.createElement('button');
+            categoryBtn.classList.add('category-btn');
+            categoryBtn.setAttribute('data-genre-id', genre.id);
+            categoryBtn.innerHTML = `${genre.emoji} ${genre.name}`;
+            
+            categoryBtn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                // Add active class to clicked button
+                categoryBtn.classList.add('active');
+                
+                // Load movies for this category
+                loadMoviesByGenre(genre.id, genre.name);
+            });
+            
+            categoriesContainer.appendChild(categoryBtn);
+        });
+    }
+
+    async function loadMoviesByGenre(genreId, genreName) {
+        currentGenreId = genreId;
+        
+        // Hide other sections
+        popularSection.style.display = 'none';
+        searchSection.style.display = 'none';
+        categorySection.style.display = 'block';
+        
+        // Update title
+        const genreEmoji = genres.find(g => g.id === genreId)?.emoji || '🎬';
+        categoryTitle.textContent = `${genreEmoji} ${genreName} Movies`;
+        
+        showLoading(categoryMoviesContainer);
+        
+        try {
+            const data = await fetchFromApi(`/discover/movie&with_genres=${genreId}&sort_by=popularity.desc`);
+            if (data && data.results) {
+                displayMovies(data.results, categoryMoviesContainer);
+            }
+        } catch (error) {
+            showError(categoryMoviesContainer, "Failed to load movies. Please try again.");
+        }
+    }
+
     function handleCardClick(event) {
         const card = event.target.closest('.movie-card');
         if (card) {
@@ -182,9 +232,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /**
-     * Fetches and displays popular movies on page load
-     */
     async function getPopularMovies() {
         showLoading(popularContainer);
         try {
@@ -197,23 +244,35 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /**
-     * Fetches and displays search results with debouncing
-     */
     async function searchMovies() {
         const query = searchInput.value.trim();
         
         if (!query) {
+            // Reset to popular movies
             popularSection.style.display = 'block';
             searchSection.style.display = 'none';
+            categorySection.style.display = 'none';
             resultsContainer.innerHTML = "";
+            
+            // Remove active class from category buttons
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
             return;
         }
+
+        // Hide category section when searching
+        categorySection.style.display = 'none';
+        
+        // Remove active class from category buttons
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
 
         showLoading(resultsContainer);
         
         try {
-            const data = await fetchFromApi(`/search/movie?query=${encodeURIComponent(query)}`);
+            const data = await fetchFromApi(`/search/movie&query=${encodeURIComponent(query)}`);
             if (data && data.results) {
                 displayMovies(data.results, resultsContainer);
                 popularSection.style.display = 'none';
@@ -225,9 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /**
-     * Debounced search function
-     */
     function debouncedSearch() {
         clearTimeout(searchDebounceTimer);
         searchDebounceTimer = setTimeout(() => {
@@ -237,15 +293,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Modal (Popup) Functions ---
 
-    /**
-     * Opens the modal with details for a specific movie ID
-     * @param {string} movieId - The TMDb movie ID
-     */
     async function openModal(movieId) {
-        // Store current modal ID to prevent race conditions
         currentModalId = movieId;
         
-        // Show modal with loading state
         modalBody.innerHTML = `
             <div style="text-align: center; padding: 60px; color: var(--text-color);">
                 <div class="loading-spinner"></div>
@@ -255,10 +305,8 @@ document.addEventListener("DOMContentLoaded", () => {
         modalOverlay.style.display = 'flex';
 
         try {
-            // Fetch primary details from TMDb
             const tmdbDetails = await fetchFromApi(`/movie/${movieId}`);
             
-            // Check if this is still the current modal request
             if (currentModalId !== movieId) return;
             
             if (!tmdbDetails) {
@@ -267,21 +315,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const imdbId = tmdbDetails.imdb_id;
 
-            // Fetch credits, videos, and OMDb details in parallel
             const [tmdbCredits, tmdbVideos, omdbDetails] = await Promise.all([
                 fetchFromApi(`/movie/${movieId}/credits`),
                 fetchFromApi(`/movie/${movieId}/videos`),
                 imdbId ? fetchFromOmdbApi(imdbId) : Promise.resolve(null)
             ]);
 
-            // Check again if this is still the current modal
             if (currentModalId !== movieId) return;
 
             if (!tmdbCredits || !tmdbVideos) {
                 throw new Error("Failed to fetch all movie details.");
             }
             
-            // Find the official YouTube trailer
             const trailer = tmdbVideos.results?.find(video => 
                 video.site === 'YouTube' && video.type === 'Trailer'
             );
@@ -290,10 +335,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? `${baseImageUrl}${tmdbDetails.poster_path}`
                 : 'https://placehold.co/500x750/666/FFFFFF?text=No+Image';
 
-            // Get main cast members with safety check
             const cast = tmdbCredits.cast?.slice(0, 5).map(actor => actor.name).join(', ') || 'N/A';
 
-            // Build OMDb details string with null checks
             let omdbRatingsHtml = '';
             if (omdbDetails?.Ratings && omdbDetails.Ratings.length > 0) {
                 omdbRatingsHtml = omdbDetails.Ratings.map(rating =>
@@ -347,27 +390,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /**
-     * Closes the modal and stops any playing videos
-     */
     function closeModal() {
-        // Clear current modal ID
         currentModalId = null;
         
-        // Stop YouTube video using postMessage API
         const iframe = modalBody.querySelector('iframe');
         if (iframe) {
             try {
                 iframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
             } catch (e) {
-                // Fallback: reset src
                 iframe.src = iframe.src;
             }
         }
         
         modalOverlay.style.display = 'none';
         
-        // Clear content after a short delay to allow animation
         setTimeout(() => {
             if (modalOverlay.style.display === 'none') {
                 modalBody.innerHTML = "";
@@ -377,8 +413,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Event Listeners ---
     searchButton.addEventListener("click", searchMovies);
-    
-    // Add debouncing to search input
     searchInput.addEventListener("input", debouncedSearch);
     
     searchInput.addEventListener("keypress", (e) => {
@@ -396,7 +430,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Add keyboard support for closing modal
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && modalOverlay.style.display === 'flex') {
             closeModal();
@@ -406,7 +439,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Event delegation for movie cards
     popularContainer.addEventListener('click', handleCardClick);
     resultsContainer.addEventListener('click', handleCardClick);
+    categoryMoviesContainer.addEventListener('click', handleCardClick);
 
     // --- Initial Load ---
+    displayCategories();
     getPopularMovies();
 });
