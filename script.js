@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- API Configuration ---
     const tmdbApiKey = typeof CONFIG !== 'undefined' ? CONFIG.tmdbApiKey : '70d39d783bf0ed1a77563490c832c0a2';
     const omdbApiKey = typeof CONFIG !== 'undefined' ? CONFIG.omdbApiKey : '84c5ac60';
-    
     const baseApiUrl = 'https://api.themoviedb.org/3';
     const baseImageUrl = 'https://image.tmdb.org/t/p/w500';
     const omdbApiUrl = 'https://www.omdbapi.com/';
@@ -27,16 +26,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- DOM Elements ---
     const themeToggleButton = document.getElementById("theme-toggle");
+    const toggleMoviesBtn = document.getElementById("toggle-movies");
+    const toggleTvBtn = document.getElementById("toggle-tv");
+    const myWatchlistBtn = document.getElementById("my-watchlist-btn");
     const searchInput = document.getElementById("search-input");
     const searchButton = document.getElementById("search-button");
     const categoriesContainer = document.getElementById("categories-container");
     const popularContainer = document.getElementById("popular-container");
     const resultsContainer = document.getElementById("results-container");
     const categoryMoviesContainer = document.getElementById("category-movies-container");
-    const popularSection = document.getElementById("popular-movies");
-    const searchSection = document.getElementById("search-results");
-    const categorySection = document.getElementById("category-movies");
+    const watchlistContainer = document.getElementById("watchlist-container");
+    const popularSection = document.getElementById("popular-section");
+    const searchSection = document.getElementById("search-section");
+    const categorySection = document.getElementById("category-section");
+    const watchlistSection = document.getElementById("watchlist-section");
     const categoryTitle = document.getElementById("category-title");
+    const popularTitle = document.getElementById("popular-title");
 
     // Modal Elements
     const modalOverlay = document.getElementById("modal-overlay");
@@ -44,7 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalBody = document.getElementById("modal-body");
 
     // State management
+    let currentMode = 'movie'; // 'movie' or 'tv'
     let currentModalId = null;
+    let currentModalMediaType = null;
     let searchDebounceTimer = null;
     let currentGenreId = null;
 
@@ -64,8 +71,94 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("theme", isDarkMode ? "dark-mode" : "");
     });
 
-    // --- Utility Functions ---
+    // --- Toggle Movies/TV ---
+    toggleMoviesBtn.addEventListener("click", () => {
+        if (currentMode !== 'movie') {
+            currentMode = 'movie';
+            updateToggleButtons();
+            loadPopular();
+            if (currentGenreId) loadByGenre(currentGenreId);
+        }
+    });
 
+    toggleTvBtn.addEventListener("click", () => {
+        if (currentMode !== 'tv') {
+            currentMode = 'tv';
+            updateToggleButtons();
+            loadPopular();
+            if (currentGenreId) loadByGenre(currentGenreId);
+        }
+    });
+
+    function updateToggleButtons() {
+        toggleMoviesBtn.classList.toggle("active", currentMode === "movie");
+        toggleTvBtn.classList.toggle("active", currentMode === "tv");
+        const modeText = currentMode === 'movie' ? 'Movies' : 'TV Shows';
+        popularTitle.textContent = `🔥 Popular ${modeText}`;
+        if (currentGenreId) {
+            const genre = genres.find(g => g.id === currentGenreId);
+            if (genre) categoryTitle.textContent = `${genre.name} ${modeText}`;
+        }
+    }
+
+    // --- Watchlist Functions ---
+    function getWatchlist() {
+        return JSON.parse(localStorage.getItem("watchlist") || "[]");
+    }
+
+    function saveWatchlist(watchlist) {
+        localStorage.setItem("watchlist", JSON.stringify(watchlist));
+    }
+
+    function isInWatchlist(id, type) {
+        const watchlist = getWatchlist();
+        return watchlist.some(item => item.id === id && item.type === type);
+    }
+
+    function addToWatchlist(id, type) {
+        const watchlist = getWatchlist();
+        if (!isInWatchlist(id, type)) {
+            watchlist.push({ id, type });
+            saveWatchlist(watchlist);
+        }
+    }
+
+    function removeFromWatchlist(id, type) {
+        let watchlist = getWatchlist();
+        watchlist = watchlist.filter(item => !(item.id === id && item.type === type));
+        saveWatchlist(watchlist);
+    }
+
+    myWatchlistBtn.addEventListener("click", showWatchlist);
+
+    async function showWatchlist() {
+        popularSection.style.display = "none";
+        searchSection.style.display = "none";
+        categorySection.style.display = "none";
+        watchlistSection.style.display = "block";
+
+        showLoading(watchlistContainer);
+        
+        const watchlist = getWatchlist();
+        if (watchlist.length === 0) {
+            watchlistContainer.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--secondary-text-color);">
+                    <p>❤️ Your watchlist is empty</p>
+                </div>
+            `;
+            return;
+        }
+
+        try {
+            const promises = watchlist.map(item => fetchFromApi(`/${item.type}/${item.id}`));
+            const items = await Promise.all(promises);
+            displayMovies(items, watchlistContainer);
+        } catch (error) {
+            showError(watchlistContainer, "Failed to load watchlist");
+        }
+    }
+
+    // --- Utility Functions ---
     function showLoading(container) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--secondary-text-color);">
@@ -84,13 +177,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Core Functions ---
-
     async function fetchFromApi(endpoint) {
         if (!tmdbApiKey || tmdbApiKey === 'YOUR_API_KEY_HERE') {
             console.error("TMDb API Key not set!");
             throw new Error("TMDb API key is not configured. Please add your API key.");
         }
-        // FIX: support endpoints with and without query params
         let url;
         if (endpoint.includes('?')) {
             url = `${baseApiUrl}${endpoint}&api_key=${tmdbApiKey}&language=en-US`;
@@ -115,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function fetchFromOmdb(imdbId) {
         if (!omdbApiKey || omdbApiKey === 'YOUR_OMDB_API_KEY_HERE') {
-            return null; // OMDb is optional
+            return null;
         }
         try {
             const url = `${omdbApiUrl}?apikey=${omdbApiKey}&i=${imdbId}`;
@@ -139,17 +230,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const card = document.createElement("div");
         card.className = "movie-card";
         card.dataset.id = movie.id;
-
-        // Popular/Genre movies won't have media_type, so we default to 'movie'
-        const mediaType = movie.media_type || 'movie';
-
+        const mediaType = movie.media_type || currentMode;
         const posterPath = movie.poster_path 
             ? `${baseImageUrl}${movie.poster_path}` 
             : "https://via.placeholder.com/200x300?text=No+Image";
-
         const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
         const ratingClass = movie.vote_average ? getRatingClass(movie.vote_average) : "";
-
         card.innerHTML = `
             <img src="${posterPath}" alt="${movie.title || movie.name}" loading="lazy">
             <div class="movie-info">
@@ -157,7 +243,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="${ratingClass}">⭐ ${rating}</span>
             </div>
         `;
-
         card.addEventListener("click", () => openModal(movie.id, mediaType));
         return card;
     }
@@ -165,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function displayMovies(movies, container) {
         container.innerHTML = "";
         if (!movies || movies.length === 0) {
-            showError(container, "No movies found.");
+            showError(container, "No results found.");
             return;
         }
         movies.forEach(movie => {
@@ -174,63 +259,53 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- Popular Movies ---
-    async function loadPopularMovies() {
+    // --- Popular Movies/TV ---
+    async function loadPopular() {
         showLoading(popularContainer);
+        popularSection.style.display = "block";
+        watchlistSection.style.display = "none";
+        const url = currentMode === "movie" ? '/movie/popular' : '/tv/popular';
         try {
-            const data = await fetchFromApi('/movie/popular');
+            const data = await fetchFromApi(url);
             displayMovies(data.results, popularContainer);
         } catch (error) {
-            showError(popularContainer, error.message || "Failed to load popular movies.");
+            showError(popularContainer, error.message || "Failed to load popular content.");
         }
     }
 
     // --- Search Functionality ---
     async function searchMovies(query) {
         if (!query.trim()) {
-            // If search is empty, show popular movies again
             searchSection.style.display = "none";
             categorySection.style.display = "none";
+            watchlistSection.style.display = "none";
             popularSection.style.display = "block";
-            loadPopularMovies();
+            loadPopular();
             return;
         }
-
         showLoading(resultsContainer);
         searchSection.style.display = "block";
         categorySection.style.display = "none";
         popularSection.style.display = "none";
-
+        watchlistSection.style.display = "none";
         try {
             const data = await fetchFromApi(`/search/multi?query=${encodeURIComponent(query)}`);
-            // Filter out people from results, show only movies and TV
             const filteredResults = data.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
             displayMovies(filteredResults, resultsContainer);
         } catch (error) {
-            showError(resultsContainer, error.message || "Failed to search movies.");
+            showError(resultsContainer, error.message || "Failed to search.");
         }
     }
 
-    searchButton.addEventListener("click", () => {
-        const query = searchInput.value;
-        searchMovies(query);
-    });
-
+    searchButton.addEventListener("click", () => searchMovies(searchInput.value));
     searchInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            const query = searchInput.value;
-            searchMovies(query);
-        }
+        if (e.key === "Enter") searchMovies(searchInput.value);
     });
-
-    // Optional: Debounced search as user types
     searchInput.addEventListener("input", () => {
         clearTimeout(searchDebounceTimer);
         searchDebounceTimer = setTimeout(() => {
             const query = searchInput.value;
-            if (query.trim().length > 2) {
-                searchMovies(query);
-            }
+            if (query.trim().length > 2) searchMovies(query);
         }, 500);
     });
 
@@ -242,83 +317,66 @@ document.addEventListener("DOMContentLoaded", () => {
             button.className = "category-btn";
             button.textContent = `${genre.emoji} ${genre.name}`;
             button.dataset.genreId = genre.id;
-            
             button.addEventListener("click", () => {
-                // Remove active class from all buttons
-                document.querySelectorAll(".category-btn").forEach(btn => {
-                    btn.classList.remove("active");
-                });
-                // Add active class to clicked button
+                document.querySelectorAll(".category-btn").forEach(btn => btn.classList.remove("active"));
                 button.classList.add("active");
-                
-                loadMoviesByGenre(genre.id, genre.name);
+                loadByGenre(genre.id);
             });
-            
             categoriesContainer.appendChild(button);
         });
     }
 
-    // --- Load Movies by Genre ---
-    async function loadMoviesByGenre(genreId, genreName) {
+    // --- Load by Genre ---
+    async function loadByGenre(genreId) {
         currentGenreId = genreId;
-        categoryTitle.textContent = `${genreName} Movies`;
-        
+        const genre = genres.find(g => g.id === genreId);
+        const modeText = currentMode === 'movie' ? 'Movies' : 'TV Shows';
+        categoryTitle.textContent = `${genre.name} ${modeText}`;
         showLoading(categoryMoviesContainer);
         categorySection.style.display = "block";
         searchSection.style.display = "none";
         popularSection.style.display = "none";
-
+        watchlistSection.style.display = "none";
+        const endpoint = currentMode === 'movie' ? '/discover/movie' : '/discover/tv';
         try {
-            const data = await fetchFromApi(`/discover/movie?with_genres=${genreId}&sort_by=popularity.desc`);
+            const data = await fetchFromApi(`${endpoint}?with_genres=${genreId}&sort_by=popularity.desc`);
             displayMovies(data.results, categoryMoviesContainer);
         } catch (error) {
-            showError(categoryMoviesContainer, error.message || "Failed to load movies by category.");
+            showError(categoryMoviesContainer, error.message || "Failed to load by category.");
         }
     }
 
-    // --- Modal (Movie Details) ---
+    // --- Modal (Details) ---
     async function openModal(itemId, mediaType = 'movie') {
         currentModalId = itemId;
+        currentModalMediaType = mediaType;
         modalOverlay.style.display = "flex";
         modalBody.innerHTML = '<div class="loading-spinner"></div>';
-
         try {
-            // Fetch item details (movie OR tv)
             const item = await fetchFromApi(`/${mediaType}/${itemId}`);
-            
-            // Fetch trailer
             const videosData = await fetchFromApi(`/${mediaType}/${itemId}/videos`);
-            const trailer = videosData.results.find(
-                video => video.type === "Trailer" && video.site === "YouTube"
-            );
-
-            // Optionally fetch OMDb data for additional info
+            const creditsData = await fetchFromApi(`/${mediaType}/${itemId}/credits`);
+            const similarData = await fetchFromApi(`/${mediaType}/${itemId}/similar`);
+            const trailer = videosData.results.find(video => video.type === "Trailer" && video.site === "YouTube");
             let omdbData = null;
             if (item.imdb_id && omdbApiKey && omdbApiKey !== 'YOUR_OMDB_API_KEY_HERE') {
                 omdbData = await fetchFromOmdb(item.imdb_id);
             }
-
-            // Build modal content
-            const posterPath = item.poster_path 
-                ? `${baseImageUrl}${item.poster_path}` 
-                : "https://via.placeholder.com/300x450?text=No+Image";
-
+            const posterPath = item.poster_path ? `${baseImageUrl}${item.poster_path}` : "https://via.placeholder.com/300x450?text=No+Image";
             const rating = item.vote_average ? item.vote_average.toFixed(1) : "N/A";
-            
-            // Handle movie/tv specific fields
             const title = item.title || item.name;
             const releaseDate = item.release_date || item.first_air_date;
             const releaseYear = releaseDate ? releaseDate.split("-")[0] : "Unknown";
-
             let runtime = "N/A";
             if (mediaType === 'movie' && item.runtime) {
                 runtime = `${item.runtime} min`;
             } else if (mediaType === 'tv' && item.episode_run_time && item.episode_run_time.length > 0) {
                 runtime = `${item.episode_run_time[0]} min (episode)`;
             }
-
             const genreNames = item.genres.map(g => g.name).join(", ") || "N/A";
-
+            const inWatchlist = isInWatchlist(itemId, mediaType);
+            const watchlistBtnText = inWatchlist ? "✓ In Watchlist" : "❤️ Add to Watchlist";
+            const watchlistBtnClass = inWatchlist ? "watchlist-btn in-watchlist" : "watchlist-btn";
             let modalHTML = `
                 <img src="${posterPath}" alt="${title}">
                 <div class="modal-details">
@@ -328,8 +386,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="info-item"><strong>Runtime:</strong> ${runtime}</div>
                     <div class="info-item"><strong>Genres:</strong> ${genreNames}</div>
             `;
-
-            // Add OMDb data if available
             if (omdbData) {
                 if (omdbData.imdbRating && omdbData.imdbRating !== "N/A") {
                     modalHTML += `<div class="info-item"><strong>IMDb Rating:</strong> ${omdbData.imdbRating}/10</div>`;
@@ -340,36 +396,49 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (omdbData.Director && omdbData.Director !== "N/A") {
                     modalHTML += `<div class="info-item"><strong>Director:</strong> ${omdbData.Director}</div>`;
                 }
-                if (omdbData.Actors && omdbData.Actors !== "N/A") {
-                    modalHTML += `<div class="info-item"><strong>Cast:</strong> ${omdbData.Actors}</div>`;
-                }
             }
-
+            modalHTML += `<button class="${watchlistBtnClass}" id="toggle-watchlist">${watchlistBtnText}</button>`;
             modalHTML += `</div>`;
-
-            // Add trailer if available
             if (trailer) {
-                modalHTML += `
-                    <div class="modal-trailer">
-                        <h3>🎬 Trailer</h3>
-                        <iframe 
-                            src="https://www.youtube.com/embed/${trailer.key}" 
-                            allowfullscreen
-                            title="${title} Trailer">
-                        </iframe>
-                    </div>
-                `;
+                modalHTML += `<div class="modal-trailer"><h3>🎬 Trailer</h3><iframe src="https://www.youtube.com/embed/${trailer.key}" allowfullscreen title="${title} Trailer"></iframe></div>`;
             }
-
+            if (creditsData.cast && creditsData.cast.length > 0) {
+                modalHTML += `<div class="modal-cast"><h3>👥 Cast</h3><div class="cast-grid">`;
+                creditsData.cast.slice(0, 8).forEach(cast => {
+                    const castImg = cast.profile_path ? `${baseImageUrl}${cast.profile_path}` : "https://via.placeholder.com/100x100?text=No+Image";
+                    modalHTML += `<div class="cast-card"><img src="${castImg}" alt="${cast.name}"><p>${cast.name}</p><p class="character">${cast.character}</p></div>`;
+                });
+                modalHTML += `</div></div>`;
+            }
+            if (similarData.results && similarData.results.length > 0) {
+                modalHTML += `<div class="modal-similar"><h3>🎞️ Similar</h3><div class="similar-grid">`;
+                similarData.results.slice(0, 10).forEach(similar => {
+                    const similarImg = similar.poster_path ? `${baseImageUrl}${similar.poster_path}` : "https://via.placeholder.com/120x180?text=No+Image";
+                    modalHTML += `<div class="similar-card" data-id="${similar.id}" data-type="${mediaType}"><img src="${similarImg}" alt="${similar.title || similar.name}"><p>${similar.title || similar.name}</p></div>`;
+                });
+                modalHTML += `</div></div>`;
+            }
             modalBody.innerHTML = modalHTML;
-
+            document.getElementById("toggle-watchlist").addEventListener("click", () => {
+                if (isInWatchlist(itemId, mediaType)) {
+                    removeFromWatchlist(itemId, mediaType);
+                } else {
+                    addToWatchlist(itemId, mediaType);
+                }
+                closeModal();
+                openModal(itemId, mediaType);
+            });
+            document.querySelectorAll(".similar-card").forEach(card => {
+                card.addEventListener("click", () => {
+                    const id = parseInt(card.dataset.id);
+                    const type = card.dataset.type;
+                    closeModal();
+                    openModal(id, type);
+                });
+            });
         } catch (error) {
-            console.error("Failed to load movie details:", error);
-            modalBody.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--secondary-text-color);">
-                    <p>⚠️ Failed to load movie details.</p>
-                </div>
-            `;
+            console.error("Failed to load details:", error);
+            modalBody.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--secondary-text-color);"><p>⚠️ Failed to load details.</p></div>`;
         }
     }
 
@@ -377,16 +446,13 @@ document.addEventListener("DOMContentLoaded", () => {
         modalOverlay.style.display = "none";
         modalBody.innerHTML = "";
         currentModalId = null;
+        currentModalMediaType = null;
     }
 
     modalCloseButton.addEventListener("click", closeModal);
     modalOverlay.addEventListener("click", (e) => {
-        if (e.target === modalOverlay) {
-            closeModal();
-        }
+        if (e.target === modalOverlay) closeModal();
     });
-
-    // Close modal with Escape key
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && modalOverlay.style.display === "flex") {
             closeModal();
@@ -395,5 +461,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Initialize App ---
     renderCategoryButtons();
-    loadPopularMovies();
+    loadPopular();
 });
