@@ -183,14 +183,10 @@ document.addEventListener("DOMContentLoaded", () => {
             categoryBtn.innerHTML = `${genre.emoji} ${genre.name}`;
             
             categoryBtn.addEventListener('click', () => {
-                // Remove active class from all buttons
                 document.querySelectorAll('.category-btn').forEach(btn => {
                     btn.classList.remove('active');
                 });
-                // Add active class to clicked button
                 categoryBtn.classList.add('active');
-                
-                // Load movies for this category
                 loadMoviesByGenre(genre.id, genre.name);
             });
             
@@ -200,20 +196,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadMoviesByGenre(genreId, genreName) {
         currentGenreId = genreId;
-        
-        // Hide other sections
         popularSection.style.display = 'none';
         searchSection.style.display = 'none';
         categorySection.style.display = 'block';
-        
-        // Update title
         const genreEmoji = genres.find(g => g.id === genreId)?.emoji || '🎬';
         categoryTitle.textContent = `${genreEmoji} ${genreName} Movies`;
-        
         showLoading(categoryMoviesContainer);
-        
         try {
-            const data = await fetchFromApi(`/discover/movie&with_genres=${genreId}&sort_by=popularity.desc`);
+            // KEY FIX: Use ? instead of & in endpoint
+            const data = await fetchFromApi(`/discover/movie?with_genres=${genreId}&sort_by=popularity.desc`);
             if (data && data.results) {
                 displayMovies(data.results, categoryMoviesContainer);
             }
@@ -246,31 +237,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function searchMovies() {
         const query = searchInput.value.trim();
-        
         if (!query) {
-            // Reset to popular movies
             popularSection.style.display = 'block';
             searchSection.style.display = 'none';
             categorySection.style.display = 'none';
             resultsContainer.innerHTML = "";
-            
-            // Remove active class from category buttons
             document.querySelectorAll('.category-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             return;
         }
-
-        // Hide category section when searching
         categorySection.style.display = 'none';
-        
-        // Remove active class from category buttons
         document.querySelectorAll('.category-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-
         showLoading(resultsContainer);
-        
         try {
             const data = await fetchFromApi(`/search/movie&query=${encodeURIComponent(query)}`);
             if (data && data.results) {
@@ -292,107 +273,88 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Modal (Popup) Functions ---
-
     async function openModal(movieId) {
         currentModalId = movieId;
-        
         modalBody.innerHTML = `
-            <div style="text-align: center; padding: 60px; color: var(--text-color);">
-                <div class="loading-spinner"></div>
-                <p style="margin-top: 15px;">Loading movie details...</p>
+            <div style=\"text-align: center; padding: 60px; color: var(--text-color);\">
+                <div class=\"loading-spinner\"></div>
+                <p style=\"margin-top: 15px;\">Loading movie details...</p>
             </div>
         `;
         modalOverlay.style.display = 'flex';
-
         try {
             const tmdbDetails = await fetchFromApi(`/movie/${movieId}`);
-            
             if (currentModalId !== movieId) return;
-            
             if (!tmdbDetails) {
                 throw new Error("Failed to fetch movie details.");
             }
-
             const imdbId = tmdbDetails.imdb_id;
-
             const [tmdbCredits, tmdbVideos, omdbDetails] = await Promise.all([
                 fetchFromApi(`/movie/${movieId}/credits`),
                 fetchFromApi(`/movie/${movieId}/videos`),
                 imdbId ? fetchFromOmdbApi(imdbId) : Promise.resolve(null)
             ]);
-
             if (currentModalId !== movieId) return;
-
             if (!tmdbCredits || !tmdbVideos) {
                 throw new Error("Failed to fetch all movie details.");
             }
-            
             const trailer = tmdbVideos.results?.find(video => 
                 video.site === 'YouTube' && video.type === 'Trailer'
             );
-            
             const posterPath = tmdbDetails.poster_path 
                 ? `${baseImageUrl}${tmdbDetails.poster_path}`
                 : 'https://placehold.co/500x750/666/FFFFFF?text=No+Image';
-
             const cast = tmdbCredits.cast?.slice(0, 5).map(actor => actor.name).join(', ') || 'N/A';
-
             let omdbRatingsHtml = '';
             if (omdbDetails?.Ratings && omdbDetails.Ratings.length > 0) {
                 omdbRatingsHtml = omdbDetails.Ratings.map(rating =>
-                    `<div class="info-item"><strong>${rating.Source}:</strong> ${rating.Value}</div>`
+                    `<div class=\"info-item\"><strong>${rating.Source}:</strong> ${rating.Value}</div>`
                 ).join('');
             }
-
             modalBody.innerHTML = `
-                <img src="${posterPath}" alt="${tmdbDetails.title}">
-                <div class="modal-details">
+                <img src=\"${posterPath}\" alt=\"${tmdbDetails.title}\">
+                <div class=\"modal-details\">
                     <h2>${tmdbDetails.title}</h2>
                     <p>${tmdbDetails.overview || 'No overview available.'}</p>
-                    
-                    <div class="info-item"><strong>TMDb Rating:</strong> ${tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : 'N/A'} / 10</div>
-                    <div class="info-item"><strong>Release Date:</strong> ${tmdbDetails.release_date || 'N/A'}</div>
-                    <div class="info-item"><strong>Genres:</strong> ${tmdbDetails.genres?.map(g => g.name).join(', ') || 'N/A'}</div>
-                    <div class="info-item"><strong>Cast:</strong> ${cast}</div>
-                    
+                    <div class=\"info-item\"><strong>TMDb Rating:</strong> ${tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : 'N/A'} / 10</div>
+                    <div class=\"info-item\"><strong>Release Date:</strong> ${tmdbDetails.release_date || 'N/A'}</div>
+                    <div class=\"info-item\"><strong>Genres:</strong> ${tmdbDetails.genres?.map(g => g.name).join(', ') || 'N/A'}</div>
+                    <div class=\"info-item\"><strong>Cast:</strong> ${cast}</div>
                     ${omdbDetails ? `
-                        <hr style="border: 0; border-top: 1px solid var(--input-border); margin: 15px 0;">
-                        <div class="info-item"><strong>Director:</strong> ${omdbDetails.Director || 'N/A'}</div>
-                        <div class="info-item"><strong>Awards:</strong> ${omdbDetails.Awards || 'N/A'}</div>
+                        <hr style=\"border: 0; border-top: 1px solid var(--input-border); margin: 15px 0;\">
+                        <div class=\"info-item\"><strong>Director:</strong> ${omdbDetails.Director || 'N/A'}</div>
+                        <div class=\"info-item\"><strong>Awards:</strong> ${omdbDetails.Awards || 'N/A'}</div>
                         ${omdbRatingsHtml}
                     ` : ''}
-                    
                     ${trailer ? `
-                        <div class="modal-trailer">
+                        <div class=\"modal-trailer\">
                             <h3>Trailer</h3>
                             <iframe
-                                src="https://www.youtube.com/embed/${trailer.key}?enablejsapi=1"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                src=\"https://www.youtube.com/embed/${trailer.key}?enablejsapi=1\"
+                                frameborder=\"0\"
+                                allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\"
                                 allowfullscreen>
                             </iframe>
                         </div>
-                    ` : '<p style="margin-top: 15px; color: var(--secondary-text-color);">No trailer available.</p>'}
+                    ` : '<p style=\"margin-top: 15px; color: var(--secondary-text-color);\">No trailer available.</p>'}
                 </div>
             `;
         } catch (error) {
             console.error("Error opening modal:", error);
             modalBody.innerHTML = `
-                <div style="text-align: center; padding: 60px; color: var(--text-color);">
+                <div style=\"text-align: center; padding: 60px; color: var(--text-color);\">
                     <p>⚠️ ${error.message}</p>
-                    <button onclick="document.getElementById('modal-overlay').style.display='none';" 
-                            style="margin-top: 20px; padding: 10px 20px; background: var(--button-bg); 
-                                   color: var(--button-text); border: none; border-radius: 8px; cursor: pointer;">
+                    <button onclick=\"document.getElementById('modal-overlay').style.display='none';\" 
+                            style=\"margin-top: 20px; padding: 10px 20px; background: var(--button-bg); 
+                                   color: var(--button-text); border: none; border-radius: 8px; cursor: pointer;\">
                         Close
                     </button>
                 </div>
             `;
         }
     }
-
     function closeModal() {
         currentModalId = null;
-        
         const iframe = modalBody.querySelector('iframe');
         if (iframe) {
             try {
@@ -401,47 +363,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 iframe.src = iframe.src;
             }
         }
-        
         modalOverlay.style.display = 'none';
-        
         setTimeout(() => {
             if (modalOverlay.style.display === 'none') {
                 modalBody.innerHTML = "";
             }
         }, 300);
     }
-
     // --- Event Listeners ---
     searchButton.addEventListener("click", searchMovies);
     searchInput.addEventListener("input", debouncedSearch);
-    
     searchInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
             clearTimeout(searchDebounceTimer);
             searchMovies();
         }
     });
-
     modalCloseButton.addEventListener("click", closeModal);
-    
     modalOverlay.addEventListener("click", (e) => {
         if (e.target === modalOverlay) {
             closeModal();
         }
     });
-
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && modalOverlay.style.display === 'flex') {
             closeModal();
         }
     });
-
-    // Event delegation for movie cards
     popularContainer.addEventListener('click', handleCardClick);
     resultsContainer.addEventListener('click', handleCardClick);
     categoryMoviesContainer.addEventListener('click', handleCardClick);
-
-    // --- Initial Load ---
     displayCategories();
     getPopularMovies();
 });
