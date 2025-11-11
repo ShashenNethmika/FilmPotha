@@ -503,7 +503,7 @@ body {
     color: var(--text-color);
 }
 
-.cast-grid {
+.cast-container {
     display: flex;
     gap: 15px;
     overflow-x: auto;
@@ -548,7 +548,7 @@ body {
     color: var(--text-color);
 }
 
-.similar-grid {
+.similar-container {
     display: flex;
     gap: 15px;
     overflow-x: auto;
@@ -584,25 +584,25 @@ body {
 }
 
 /* Scrollbar for horizontal scrolling */
-.cast-grid::-webkit-scrollbar,
-.similar-grid::-webkit-scrollbar {
+.cast-container::-webkit-scrollbar,
+.similar-container::-webkit-scrollbar {
     height: 6px;
 }
 
-.cast-grid::-webkit-scrollbar-track,
-.similar-grid::-webkit-scrollbar-track {
+.cast-container::-webkit-scrollbar-track,
+.similar-container::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
     border-radius: 4px;
 }
 
-.cast-grid::-webkit-scrollbar-thumb,
-.similar-grid::-webkit-scrollbar-thumb {
+.cast-container::-webkit-scrollbar-thumb,
+.similar-container::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
 
-.cast-grid::-webkit-scrollbar-thumb:hover,
-.similar-grid::-webkit-scrollbar-thumb:hover {
+.cast-container::-webkit-scrollbar-thumb:hover,
+.similar-container::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
 }
 
