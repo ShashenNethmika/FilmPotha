@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     // --- API Configuration ---
-    const tmdbApiKey = '798d6f8f46539dc4da57904c17b76e28'; // <--- TMDb Key
+    const tmdbApiKey = '70d39d783bf0ed1a77563490c832c0a2'; // <--- TMDb Key
     const baseApiUrl = 'https://api.themoviedb.org/3';
     const baseImageUrl = 'https://image.tmdb.org/t/p/w500';
 
