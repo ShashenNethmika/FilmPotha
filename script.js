@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const watchlistSection = document.getElementById("watchlist-section");
     const categoryTitle = document.getElementById("category-title");
     const popularTitle = document.getElementById("popular-title");
+    const homeTitle = document.getElementById("home-title");
 
     // Modal Elements
     const modalOverlay = document.getElementById("modal-overlay");
@@ -59,15 +60,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark-mode") {
         document.body.classList.add("dark-mode");
-        themeToggleButton.textContent = "Light Mode";
+        themeToggleButton.textContent = "☀️";
     } else {
-        themeToggleButton.textContent = "Dark Mode";
+        themeToggleButton.textContent = "🌙";
     }
 
     themeToggleButton.addEventListener("click", () => {
         document.body.classList.toggle("dark-mode");
         const isDarkMode = document.body.classList.contains("dark-mode");
-        themeToggleButton.textContent = isDarkMode ? "Light Mode" : "Dark Mode";
+        themeToggleButton.textContent = isDarkMode ? "☀️" : "🌙";
         localStorage.setItem("theme", isDarkMode ? "dark-mode" : "");
     });
 
@@ -402,31 +403,42 @@ document.addEventListener("DOMContentLoaded", () => {
             if (trailer) {
                 modalHTML += `<div class="modal-trailer"><h3>🎬 Trailer</h3><iframe src="https://www.youtube.com/embed/${trailer.key}" allowfullscreen title="${title} Trailer"></iframe></div>`;
             }
+            modalHTML += `<div class="modal-cast"><h3>👥 Cast</h3>`;
             if (creditsData.cast && creditsData.cast.length > 0) {
-                modalHTML += `<div class="modal-cast"><h3>👥 Cast</h3><div class="cast-grid">`;
+                modalHTML += `<div class="cast-container">`;
                 creditsData.cast.slice(0, 8).forEach(cast => {
                     const castImg = cast.profile_path ? `${baseImageUrl}${cast.profile_path}` : "https://via.placeholder.com/100x100?text=No+Image";
                     modalHTML += `<div class="cast-card"><img src="${castImg}" alt="${cast.name}"><p>${cast.name}</p><p class="character">${cast.character}</p></div>`;
                 });
-                modalHTML += `</div></div>`;
+                modalHTML += `</div>`;
+            } else {
+                modalHTML += `<p>No cast information available.</p>`;
             }
+            modalHTML += `</div>`;
+            modalHTML += `<div class="modal-similar"><h3>🎞️ Similar</h3>`;
             if (similarData.results && similarData.results.length > 0) {
-                modalHTML += `<div class="modal-similar"><h3>🎞️ Similar</h3><div class="similar-grid">`;
+                modalHTML += `<div class="similar-container">`;
                 similarData.results.slice(0, 10).forEach(similar => {
                     const similarImg = similar.poster_path ? `${baseImageUrl}${similar.poster_path}` : "https://via.placeholder.com/120x180?text=No+Image";
                     modalHTML += `<div class="similar-card" data-id="${similar.id}" data-type="${mediaType}"><img src="${similarImg}" alt="${similar.title || similar.name}"><p>${similar.title || similar.name}</p></div>`;
                 });
-                modalHTML += `</div></div>`;
+                modalHTML += `</div>`;
+            } else {
+                modalHTML += `<p>No similar movies available.</p>`;
             }
+            modalHTML += `</div>`;
             modalBody.innerHTML = modalHTML;
-            document.getElementById("toggle-watchlist").addEventListener("click", () => {
+            document.getElementById("toggle-watchlist").addEventListener("click", (e) => {
+                const button = e.target;
                 if (isInWatchlist(itemId, mediaType)) {
                     removeFromWatchlist(itemId, mediaType);
+                    button.textContent = "❤️ Add to Watchlist";
+                    button.classList.remove("in-watchlist");
                 } else {
                     addToWatchlist(itemId, mediaType);
+                    button.textContent = "✓ In Watchlist";
+                    button.classList.add("in-watchlist");
                 }
-                closeModal();
-                openModal(itemId, mediaType);
             });
             document.querySelectorAll(".similar-card").forEach(card => {
                 card.addEventListener("click", () => {
@@ -457,6 +469,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Escape" && modalOverlay.style.display === "flex") {
             closeModal();
         }
+    });
+
+    homeTitle.addEventListener("click", () => {
+        searchSection.style.display = "none";
+        categorySection.style.display = "none";
+        watchlistSection.style.display = "none";
+        popularSection.style.display = "block";
+        loadPopular();
     });
 
     // --- Initialize App ---

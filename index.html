@@ -17,18 +17,12 @@
     <div class="container">
         <!-- Header with Title, Watchlist, and Theme Toggle -->
         <header class="header-container">
-            <h2>🎬 Film Potha</h2>
+            <h2 id="home-title" style="cursor: pointer;">🎬 Film Potha</h2>
             <div class="header-buttons">
                 <button id="my-watchlist-btn" class="header-btn" aria-label="My Watchlist">❤️ Watchlist</button>
-                <button id="theme-toggle" aria-label="Toggle theme">Light Mode</button>
+                <button id="theme-toggle" aria-label="Toggle theme">☀️</button>
             </div>
         </header>
-
-        <!-- Toggle Movies/TV Shows -->
-        <div class="toggle-container">
-            <button id="toggle-movies" class="toggle-btn active" aria-label="Show Movies">🎬 Movies</button>
-            <button id="toggle-tv" class="toggle-btn" aria-label="Show TV Series">📺 TV Shows</button>
-        </div>
 
         <!-- Search Bar -->
         <div class="search-container">
@@ -38,6 +32,12 @@
                    autocomplete="off"
                    aria-label="Search movies and TV series">
             <button id="search-button" aria-label="Search">Search</button>
+        </div>
+
+        <!-- Toggle Movies/TV Shows -->
+        <div class="toggle-container">
+            <button id="toggle-movies" class="toggle-btn active" aria-label="Show Movies">🎬 Movies</button>
+            <button id="toggle-tv" class="toggle-btn" aria-label="Show TV Series">📺 TV Shows</button>
         </div>
 
         <!-- Categories Section -->
