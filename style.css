@@ -16,6 +16,9 @@
   --scrollbar-track: #e0e0e0;
   --scrollbar-thumb: #6b48ff;
   --scrollbar-thumb-hover: #00d4ff;
+  --category-bg: rgba(255, 255, 255, 0.6);
+  --category-hover: rgba(107, 72, 255, 0.15);
+  --category-active: linear-gradient(135deg, rgba(107, 72, 255, 0.9), rgba(0, 212, 255, 0.9));
 }
 
 /* Dark mode variables */
@@ -36,6 +39,9 @@ body.dark-mode {
   --scrollbar-track: #2a2a2a;
   --scrollbar-thumb: #2a5298;
   --scrollbar-thumb-hover: #ff6f61;
+  --category-bg: rgba(44, 44, 44, 0.5);
+  --category-hover: rgba(255, 111, 97, 0.15);
+  --category-active: linear-gradient(135deg, rgba(255, 111, 97, 0.9), rgba(42, 82, 152, 0.9));
 }
 
 /* General styles */
@@ -154,6 +160,51 @@ body {
   100% { transform: rotate(360deg); }
 }
 
+/* Categories Section */
+.categories-section {
+    margin-bottom: 30px;
+}
+
+.categories-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.category-btn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background: var(--category-bg);
+    color: var(--text-color);
+    border: 2px solid var(--input-border);
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+}
+
+.category-btn:hover {
+    background: var(--category-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-color: var(--input-focus);
+}
+
+.category-btn.active {
+    background: var(--category-active);
+    color: var(--button-text);
+    border-color: transparent;
+    box-shadow: 0 0 15px var(--glow-color);
+    transform: scale(1.05);
+}
+
+.category-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
 /* Movie Grid and Card Styles */
 .results-section {
     margin-top: 20px;
@@ -182,6 +233,11 @@ body {
     .movie-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 15px;
+    }
+    
+    .category-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
     }
 }
 
