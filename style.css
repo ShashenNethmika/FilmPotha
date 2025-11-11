@@ -1,4 +1,4 @@
-/* Light mode variables (Copied from your weather app style) */
+/* Light mode variables */
 :root {
   --background-color: linear-gradient(to bottom, #a6c1ee, #fbc2eb);
   --text-color: #222;
@@ -18,7 +18,7 @@
   --scrollbar-thumb-hover: #00d4ff;
 }
 
-/* Dark mode variables (Copied from your weather app style) */
+/* Dark mode variables */
 body.dark-mode {
   --background-color: linear-gradient(to bottom, #1a1a2e, #16213e);
   --text-color: #f0f0f0;
@@ -38,7 +38,7 @@ body.dark-mode {
   --scrollbar-thumb-hover: #ff6f61;
 }
 
-/* General styles (Adapted from your weather app style) */
+/* General styles */
 * {
   margin: 0;
   padding: 0;
@@ -60,7 +60,7 @@ body {
   border-radius: 10px;
   box-shadow: var(--shadow);
   width: 100%;
-  max-width: 1200px; /* Wider for movie grid */
+  max-width: 1200px;
   margin: 0 auto;
   backdrop-filter: blur(10px);
   transition: background-color 0.5s ease;
@@ -71,8 +71,8 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    flex-wrap: wrap; /* Added for responsiveness */
-    gap: 10px; /* Added for spacing */
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .header-container h2 {
@@ -80,6 +80,7 @@ body {
     font-size: 2rem;
     transition: text-shadow 0.3s ease;
 }
+
 .header-container h2:hover {
     text-shadow: 0 0 5px var(--glow-color), 0 0 15px var(--glow-color);
 }
@@ -88,10 +89,12 @@ body {
   display: flex;
   gap: 10px;
   margin-bottom: 30px;
+  flex-wrap: wrap;
 }
 
 #search-input {
   flex-grow: 1;
+  min-width: 200px;
   padding: 12px 16px;
   font-size: 1.1rem;
   border: 2px solid var(--input-border);
@@ -120,7 +123,7 @@ body {
   cursor: pointer;
   transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  white-space: nowrap; /* Prevent text wrap */
+  white-space: nowrap;
 }
 
 #search-button:hover,
@@ -128,6 +131,27 @@ body {
   background: var(--button-hover-bg);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#search-button:active,
+#theme-toggle:active {
+  transform: translateY(0);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--input-border);
+  border-top: 4px solid var(--input-focus);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Movie Grid and Card Styles */
@@ -144,7 +168,6 @@ body {
 
 .movie-grid {
     display: grid;
-    /* Responsive grid */
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 20px;
 }
@@ -155,6 +178,12 @@ body {
     }
 }
 
+@media (max-width: 480px) {
+    .movie-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+    }
+}
 
 .movie-card {
     background: var(--card-bg);
@@ -168,7 +197,6 @@ body {
 .movie-card:hover {
     transform: scale(1.05);
     box-shadow: 0 0 15px var(--glow-color);
-    z-index: 10;
 }
 
 .movie-card img {
@@ -176,6 +204,12 @@ body {
     height: 300px;
     object-fit: cover;
     display: block;
+}
+
+@media (max-width: 480px) {
+    .movie-card img {
+        height: 250px;
+    }
 }
 
 .movie-info {
@@ -204,7 +238,6 @@ body {
 .movie-info span.orange { color: #e67e22; }
 .movie-info span.red { color: #e74c3c; }
 
-
 /* Modal (Popup) Styles */
 .modal-overlay {
     position: fixed;
@@ -212,9 +245,9 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(5px);
-    display: none; /* Hidden by default */
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
@@ -245,6 +278,7 @@ body {
     color: var(--text-color);
     cursor: pointer;
     transition: transform 0.2s ease, color 0.2s ease;
+    z-index: 10;
 }
 
 .modal-close:hover {
@@ -255,6 +289,7 @@ body {
 #modal-body {
     display: flex;
     gap: 30px;
+    flex-wrap: wrap;
 }
 
 #modal-body img {
@@ -262,11 +297,18 @@ body {
     height: auto;
     border-radius: 10px;
     box-shadow: var(--shadow);
+    flex-shrink: 0;
+}
+
+.modal-details {
+    flex: 1;
+    min-width: 250px;
 }
 
 .modal-details h2 {
     font-size: 2.2rem;
     margin-bottom: 15px;
+    line-height: 1.2;
 }
 
 .modal-details p {
@@ -277,8 +319,9 @@ body {
 }
 
 .modal-details .info-item {
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin-bottom: 10px;
+    line-height: 1.5;
 }
 
 .modal-details .info-item strong {
@@ -287,10 +330,12 @@ body {
 
 .modal-trailer {
     margin-top: 20px;
+    width: 100%;
 }
 
 .modal-trailer h3 {
     margin-bottom: 10px;
+    font-size: 1.3rem;
 }
 
 .modal-trailer iframe {
@@ -307,22 +352,49 @@ body {
 
 /* Responsive modal for small screens */
 @media (max-width: 768px) {
+    .modal-content {
+        padding: 20px;
+    }
+    
     #modal-body {
         flex-direction: column;
         align-items: center;
-        text-align: center;
+        gap: 20px;
     }
-    .modal-details {
-        text-align: left;
-    }
+    
     #modal-body img {
         width: 100%;
         max-width: 300px;
-        height: auto;
+    }
+    
+    .modal-details h2 {
+        font-size: 1.8rem;
+    }
+    
+    .modal-trailer iframe {
+        height: 250px;
     }
 }
 
-/* Scrollbar styling (From your weather app) */
+@media (max-width: 480px) {
+    .header-container h2 {
+        font-size: 1.5rem;
+    }
+    
+    #search-input {
+        font-size: 1rem;
+    }
+    
+    .modal-details h2 {
+        font-size: 1.5rem;
+    }
+    
+    .modal-trailer iframe {
+        height: 200px;
+    }
+}
+
+/* Scrollbar styling */
 body::-webkit-scrollbar,
 .modal-content::-webkit-scrollbar {
   width: 8px;
