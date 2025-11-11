@@ -140,6 +140,9 @@ document.addEventListener("DOMContentLoaded", () => {
         card.className = "movie-card";
         card.dataset.id = movie.id;
 
+        // Popular/Genre movies won't have media_type, so we default to 'movie'
+        const mediaType = movie.media_type || 'movie';
+
         const posterPath = movie.poster_path 
             ? `${baseImageUrl}${movie.poster_path}` 
             : "https://via.placeholder.com/200x300?text=No+Image";
@@ -155,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
 
-        card.addEventListener("click", () => openModal(movie.id));
+        card.addEventListener("click", () => openModal(movie.id, mediaType));
         return card;
     }
 
@@ -199,8 +202,10 @@ document.addEventListener("DOMContentLoaded", () => {
         popularSection.style.display = "none";
 
         try {
-            const data = await fetchFromApi(`/search/movie?query=${encodeURIComponent(query)}`);
-            displayMovies(data.results, resultsContainer);
+            const data = await fetchFromApi(`/search/multi?query=${encodeURIComponent(query)}`);
+            // Filter out people from results, show only movies and TV
+            const filteredResults = data.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+            displayMovies(filteredResults, resultsContainer);
         } catch (error) {
             showError(resultsContainer, error.message || "Failed to search movies.");
         }
@@ -272,42 +277,53 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Modal (Movie Details) ---
-    async function openModal(movieId) {
-        currentModalId = movieId;
+    async function openModal(itemId, mediaType = 'movie') {
+        currentModalId = itemId;
         modalOverlay.style.display = "flex";
         modalBody.innerHTML = '<div class="loading-spinner"></div>';
 
         try {
-            // Fetch movie details
-            const movie = await fetchFromApi(`/movie/${movieId}`);
+            // Fetch item details (movie OR tv)
+            const item = await fetchFromApi(`/${mediaType}/${itemId}`);
             
             // Fetch trailer
-            const videosData = await fetchFromApi(`/movie/${movieId}/videos`);
+            const videosData = await fetchFromApi(`/${mediaType}/${itemId}/videos`);
             const trailer = videosData.results.find(
                 video => video.type === "Trailer" && video.site === "YouTube"
             );
 
             // Optionally fetch OMDb data for additional info
             let omdbData = null;
-            if (movie.imdb_id && omdbApiKey && omdbApiKey !== 'YOUR_OMDB_API_KEY_HERE') {
-                omdbData = await fetchFromOmdb(movie.imdb_id);
+            if (item.imdb_id && omdbApiKey && omdbApiKey !== 'YOUR_OMDB_API_KEY_HERE') {
+                omdbData = await fetchFromOmdb(item.imdb_id);
             }
 
             // Build modal content
-            const posterPath = movie.poster_path 
-                ? `${baseImageUrl}${movie.poster_path}` 
+            const posterPath = item.poster_path 
+                ? `${baseImageUrl}${item.poster_path}` 
                 : "https://via.placeholder.com/300x450?text=No+Image";
 
-            const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
-            const releaseYear = movie.release_date ? movie.release_date.split("-")[0] : "Unknown";
-            const runtime = movie.runtime ? `${movie.runtime} min` : "N/A";
-            const genreNames = movie.genres.map(g => g.name).join(", ") || "N/A";
+            const rating = item.vote_average ? item.vote_average.toFixed(1) : "N/A";
+            
+            // Handle movie/tv specific fields
+            const title = item.title || item.name;
+            const releaseDate = item.release_date || item.first_air_date;
+            const releaseYear = releaseDate ? releaseDate.split("-")[0] : "Unknown";
+
+            let runtime = "N/A";
+            if (mediaType === 'movie' && item.runtime) {
+                runtime = `${item.runtime} min`;
+            } else if (mediaType === 'tv' && item.episode_run_time && item.episode_run_time.length > 0) {
+                runtime = `${item.episode_run_time[0]} min (episode)`;
+            }
+
+            const genreNames = item.genres.map(g => g.name).join(", ") || "N/A";
 
             let modalHTML = `
-                <img src="${posterPath}" alt="${movie.title}">
+                <img src="${posterPath}" alt="${title}">
                 <div class="modal-details">
-                    <h2 id="modal-title">${movie.title} (${releaseYear})</h2>
-                    <p>${movie.overview || "No description available."}</p>
+                    <h2 id="modal-title">${title} (${releaseYear})</h2>
+                    <p>${item.overview || "No description available."}</p>
                     <div class="info-item"><strong>Rating:</strong> ⭐ ${rating}/10</div>
                     <div class="info-item"><strong>Runtime:</strong> ${runtime}</div>
                     <div class="info-item"><strong>Genres:</strong> ${genreNames}</div>
@@ -339,7 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <iframe 
                             src="https://www.youtube.com/embed/${trailer.key}" 
                             allowfullscreen
-                            title="${movie.title} Trailer">
+                            title="${title} Trailer">
                         </iframe>
                     </div>
                 `;
