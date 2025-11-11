@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Film Potha - Movie Search & Browse by Category</title>
-    <meta name="description" content="Search and discover movies with Film Potha - Browse by categories, genres, and find your favorite films">
+    <title>Film Potha - Movie & TV Series Search</title>
+    <meta name="description" content="Search and discover movies and TV series with Film Potha - Browse by categories, genres, and manage your watchlist">
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -15,19 +15,28 @@
 <body>
 
     <div class="container">
-        <!-- Header with Title and Theme Toggle -->
+        <!-- Header with Title, Watchlist, and Theme Toggle -->
         <header class="header-container">
             <h2>🎬 Film Potha</h2>
-            <button id="theme-toggle" aria-label="Toggle theme">Light Mode</button>
+            <div class="header-buttons">
+                <button id="my-watchlist-btn" class="header-btn" aria-label="My Watchlist">❤️ Watchlist</button>
+                <button id="theme-toggle" aria-label="Toggle theme">Light Mode</button>
+            </div>
         </header>
+
+        <!-- Toggle Movies/TV Shows -->
+        <div class="toggle-container">
+            <button id="toggle-movies" class="toggle-btn active" aria-label="Show Movies">🎬 Movies</button>
+            <button id="toggle-tv" class="toggle-btn" aria-label="Show TV Series">📺 TV Shows</button>
+        </div>
 
         <!-- Search Bar -->
         <div class="search-container">
             <input type="text" 
                    id="search-input" 
-                   placeholder="Search for a movie..." 
+                   placeholder="Search for a movie or TV series..." 
                    autocomplete="off"
-                   aria-label="Search movies">
+                   aria-label="Search movies and TV series">
             <button id="search-button" aria-label="Search">Search</button>
         </div>
 
@@ -40,15 +49,15 @@
         </section>
 
         <!-- Section for Popular Movies (loads on start) -->
-        <section id="popular-movies" class="results-section">
-            <h3 class="section-title">🔥 Popular Movies</h3>
+        <section id="popular-section" class="results-section">
+            <h3 class="section-title" id="popular-title">🔥 Popular Movies</h3>
             <div id="popular-container" class="movie-grid">
                 <!-- Popular movies will be injected here by JS -->
             </div>
         </section>
 
         <!-- Section for Category Movies (hidden by default) -->
-        <section id="category-movies" class="results-section" style="display:none;">
+        <section id="category-section" class="results-section" style="display:none;">
             <h3 class="section-title" id="category-title">Category Movies</h3>
             <div id="category-movies-container" class="movie-grid">
                 <!-- Category movies will be injected here by JS -->
@@ -56,10 +65,18 @@
         </section>
 
         <!-- Section for Search Results (hidden by default) -->
-        <section id="search-results" class="results-section" style="display:none;">
+        <section id="search-section" class="results-section" style="display:none;">
             <h3 class="section-title">🔍 Your Results</h3>
             <div id="results-container" class="movie-grid">
                 <!-- Search results will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Section for Watchlist (hidden by default) -->
+        <section id="watchlist-section" class="results-section" style="display:none;">
+            <h3 class="section-title">❤️ My Watchlist</h3>
+            <div id="watchlist-container" class="movie-grid">
+                <!-- Watchlist items will be injected here by JS -->
             </div>
         </section>
     </div>
