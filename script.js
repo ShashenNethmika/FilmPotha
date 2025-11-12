@@ -130,7 +130,10 @@ document.addEventListener("DOMContentLoaded", () => {
         saveWatchlist(watchlist);
     }
 
-    myWatchlistBtn.addEventListener("click", showWatchlist);
+    myWatchlistBtn.addEventListener("click", () => {
+        showWatchlist();
+        searchInput.value = ""; // Clear search input
+    });
 
     async function showWatchlist() {
         popularSection.style.display = "none";
@@ -321,6 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
             button.addEventListener("click", () => {
                 document.querySelectorAll(".category-btn").forEach(btn => btn.classList.remove("active"));
                 button.classList.add("active");
+                searchInput.value = ""; // Clear search input
                 loadByGenre(genre.id);
             });
             categoriesContainer.appendChild(button);
@@ -420,7 +424,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 modalHTML += `<div class="similar-container">`;
                 similarData.results.slice(0, 10).forEach(similar => {
                     const similarImg = similar.poster_path ? `${baseImageUrl}${similar.poster_path}` : "https://via.placeholder.com/120x180?text=No+Image";
-                    modalHTML += `<div class="similar-card" data-id="${similar.id}" data-type="${mediaType}"><img src="${similarImg}" alt="${similar.title || similar.name}"><p>${similar.title || similar.name}</p></div>`;
+                    // Get rating and class for similar movies
+                    const similarRating = similar.vote_average ? similar.vote_average.toFixed(1) : "N/A";
+                    const ratingClass = similar.vote_average ? getRatingClass(similar.vote_average) : "";
+                    
+                    modalHTML += `
+                        <div class="similar-card" data-id="${similar.id}" data-type="${mediaType}">
+                            <img src="${similarImg}" alt="${similar.title || similar.name}">
+                            <div class="similar-info">
+                                <p>${similar.title || similar.name}</p>
+                                <span class="${ratingClass}">⭐ ${similarRating}</span>
+                            </div>
+                        </div>`;
                 });
                 modalHTML += `</div>`;
             } else {
@@ -476,6 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
         categorySection.style.display = "none";
         watchlistSection.style.display = "none";
         popularSection.style.display = "block";
+        searchInput.value = ""; // Clear search input
         loadPopular();
     });
 
