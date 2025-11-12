@@ -507,16 +507,71 @@ body {
     border-radius: 8px;
 }
 
+/* Carousel Navigation Buttons */
+.cast-carousel-wrapper,
+.similar-carousel-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-btn:hover {
+    background: var(--button-hover-bg);
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+.carousel-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.cast-prev-btn,
+.similar-prev-btn {
+    left: -5px;
+}
+
+.cast-next-btn,
+.similar-next-btn {
+    right: -5px;
+}
+
 /* Cast section in modal */
 .modal-cast {
     margin-top: 30px;
     width: 100%;
 }
 
-.modal-cast h3 {
+.cast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 15px;
+}
+
+.modal-cast h3 {
     font-size: 1.3rem;
     color: var(--text-color);
+    margin: 0;
 }
 
 .cast-container {
@@ -527,6 +582,7 @@ body {
     scroll-snap-type: x mandatory;
     padding-left: 20px;
     padding-right: 20px;
+    scroll-behavior: smooth;
 }
 
 .cast-card {
@@ -563,10 +619,17 @@ body {
     width: 100%;
 }
 
-.modal-similar h3 {
+.similar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 15px;
+}
+
+.modal-similar h3 {
     font-size: 1.3rem;
     color: var(--text-color);
+    margin: 0;
 }
 
 .similar-container {
@@ -577,6 +640,7 @@ body {
     scroll-snap-type: x mandatory;
     padding-left: 20px;
     padding-right: 20px;
+    scroll-behavior: smooth;
 }
 
 .similar-card {
@@ -704,6 +768,22 @@ body {
         width: 100px;
         height: 150px;
     }
+    
+    .carousel-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 1.5rem;
+    }
+    
+    .cast-prev-btn,
+    .similar-prev-btn {
+        left: 0;
+    }
+    
+    .cast-next-btn,
+    .similar-next-btn {
+        right: 0;
+    }
 }
 
 @media (max-width: 480px) {
@@ -731,6 +811,12 @@ body {
     .toggle-btn {
         padding: 8px 16px;
         font-size: 0.9rem;
+    }
+    
+    .carousel-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 1.2rem;
     }
 }
 
