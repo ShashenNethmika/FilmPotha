@@ -351,6 +351,35 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // --- Carousel Navigation Function ---
+    function setupCarouselNavigation(container, leftBtn, rightBtn) {
+        const scrollAmount = 250;
+        
+        leftBtn.addEventListener('click', () => {
+            container.scrollBy({
+                left: -scrollAmount,
+                behavior: 'smooth'
+            });
+        });
+        
+        rightBtn.addEventListener('click', () => {
+            container.scrollBy({
+                left: scrollAmount,
+                behavior: 'smooth'
+            });
+        });
+        
+        // Update button visibility based on scroll position
+        function updateButtonVisibility() {
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            leftBtn.style.opacity = container.scrollLeft > 0 ? '1' : '0.3';
+            rightBtn.style.opacity = container.scrollLeft < maxScroll - 5 ? '1' : '0.3';
+        }
+        
+        container.addEventListener('scroll', updateButtonVisibility);
+        updateButtonVisibility();
+    }
+
     // --- Modal (Details) ---
     async function openModal(itemId, mediaType = 'movie') {
         currentModalId = itemId;
@@ -407,24 +436,31 @@ document.addEventListener("DOMContentLoaded", () => {
             if (trailer) {
                 modalHTML += `<div class="modal-trailer"><h3>🎬 Trailer</h3><iframe src="https://www.youtube.com/embed/${trailer.key}" allowfullscreen title="${title} Trailer"></iframe></div>`;
             }
-            modalHTML += `<div class="modal-cast"><h3>👥 Cast</h3>`;
+            modalHTML += `<div class="modal-cast">`;
+            modalHTML += `<div class="cast-header"><h3>👥 Cast</h3></div>`;
             if (creditsData.cast && creditsData.cast.length > 0) {
+                modalHTML += `<div class="cast-carousel-wrapper">`;
+                modalHTML += `<button class="carousel-btn cast-prev-btn" aria-label="Previous cast members">‹</button>`;
                 modalHTML += `<div class="cast-container">`;
-                creditsData.cast.slice(0, 8).forEach(cast => {
+                creditsData.cast.slice(0, 12).forEach(cast => {
                     const castImg = cast.profile_path ? `${baseImageUrl}${cast.profile_path}` : "https://via.placeholder.com/100x100?text=No+Image";
                     modalHTML += `<div class="cast-card"><img src="${castImg}" alt="${cast.name}"><p>${cast.name}</p><p class="character">${cast.character}</p></div>`;
                 });
+                modalHTML += `</div>`;
+                modalHTML += `<button class="carousel-btn cast-next-btn" aria-label="Next cast members">›</button>`;
                 modalHTML += `</div>`;
             } else {
                 modalHTML += `<p>No cast information available.</p>`;
             }
             modalHTML += `</div>`;
-            modalHTML += `<div class="modal-similar"><h3>🎞️ Similar</h3>`;
+            modalHTML += `<div class="modal-similar">`;
+            modalHTML += `<div class="similar-header"><h3>🎞️ Similar</h3></div>`;
             if (similarData.results && similarData.results.length > 0) {
+                modalHTML += `<div class="similar-carousel-wrapper">`;
+                modalHTML += `<button class="carousel-btn similar-prev-btn" aria-label="Previous similar movies">‹</button>`;
                 modalHTML += `<div class="similar-container">`;
                 similarData.results.slice(0, 10).forEach(similar => {
                     const similarImg = similar.poster_path ? `${baseImageUrl}${similar.poster_path}` : "https://via.placeholder.com/120x180?text=No+Image";
-                    // Get rating and class for similar movies
                     const similarRating = similar.vote_average ? similar.vote_average.toFixed(1) : "N/A";
                     const ratingClass = similar.vote_average ? getRatingClass(similar.vote_average) : "";
                     
@@ -438,11 +474,30 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>`;
                 });
                 modalHTML += `</div>`;
+                modalHTML += `<button class="carousel-btn similar-next-btn" aria-label="Next similar movies">›</button>`;
+                modalHTML += `</div>`;
             } else {
                 modalHTML += `<p>No similar movies available.</p>`;
             }
             modalHTML += `</div>`;
             modalBody.innerHTML = modalHTML;
+            
+            // Setup carousel navigation for cast
+            const castContainer = document.querySelector('.cast-container');
+            const castPrevBtn = document.querySelector('.cast-prev-btn');
+            const castNextBtn = document.querySelector('.cast-next-btn');
+            if (castContainer && castPrevBtn && castNextBtn) {
+                setupCarouselNavigation(castContainer, castPrevBtn, castNextBtn);
+            }
+            
+            // Setup carousel navigation for similar movies
+            const similarContainer = document.querySelector('.similar-container');
+            const similarPrevBtn = document.querySelector('.similar-prev-btn');
+            const similarNextBtn = document.querySelector('.similar-next-btn');
+            if (similarContainer && similarPrevBtn && similarNextBtn) {
+                setupCarouselNavigation(similarContainer, similarPrevBtn, similarNextBtn);
+            }
+            
             document.getElementById("toggle-watchlist").addEventListener("click", (e) => {
                 const button = e.target;
                 if (isInWatchlist(itemId, mediaType)) {
