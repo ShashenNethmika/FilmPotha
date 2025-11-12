@@ -351,66 +351,43 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- Carousel Navigation Function ---
-    function setupCarouselNavigation(container, leftBtn, rightBtn) {
-        const scrollAmount = 250;
-        
-        leftBtn.addEventListener('click', () => {
-            container.scrollBy({
-                left: -scrollAmount,
-                behavior: 'smooth'
-            });
-        });
-        
-        rightBtn.addEventListener('click', () => {
-            container.scrollBy({
-                left: scrollAmount,
-                behavior: 'smooth'
-            });
-        });
-        
-        // Update button visibility based on scroll position
-        function updateButtonVisibility() {
-            const maxScroll = container.scrollWidth - container.clientWidth;
-            leftBtn.style.opacity = container.scrollLeft > 0 ? '1' : '0.3';
-            rightBtn.style.opacity = container.scrollLeft < maxScroll - 5 ? '1' : '0.3';
-        }
-        
-        container.addEventListener('scroll', updateButtonVisibility);
-        updateButtonVisibility();
-    }
-
     // --- Modal (Details) ---
     async function openModal(itemId, mediaType = 'movie') {
         currentModalId = itemId;
         currentModalMediaType = mediaType;
         modalOverlay.style.display = "flex";
         modalBody.innerHTML = '<div class="loading-spinner"></div>';
+
         try {
             const item = await fetchFromApi(`/${mediaType}/${itemId}`);
             const videosData = await fetchFromApi(`/${mediaType}/${itemId}/videos`);
             const creditsData = await fetchFromApi(`/${mediaType}/${itemId}/credits`);
             const similarData = await fetchFromApi(`/${mediaType}/${itemId}/similar`);
             const trailer = videosData.results.find(video => video.type === "Trailer" && video.site === "YouTube");
+            
             let omdbData = null;
             if (item.imdb_id && omdbApiKey && omdbApiKey !== 'YOUR_OMDB_API_KEY_HERE') {
                 omdbData = await fetchFromOmdb(item.imdb_id);
             }
+
             const posterPath = item.poster_path ? `${baseImageUrl}${item.poster_path}` : "https://via.placeholder.com/300x450?text=No+Image";
             const rating = item.vote_average ? item.vote_average.toFixed(1) : "N/A";
             const title = item.title || item.name;
             const releaseDate = item.release_date || item.first_air_date;
             const releaseYear = releaseDate ? releaseDate.split("-")[0] : "Unknown";
             let runtime = "N/A";
+            
             if (mediaType === 'movie' && item.runtime) {
                 runtime = `${item.runtime} min`;
             } else if (mediaType === 'tv' && item.episode_run_time && item.episode_run_time.length > 0) {
                 runtime = `${item.episode_run_time[0]} min (episode)`;
             }
+            
             const genreNames = item.genres.map(g => g.name).join(", ") || "N/A";
             const inWatchlist = isInWatchlist(itemId, mediaType);
             const watchlistBtnText = inWatchlist ? "✓ In Watchlist" : "❤️ Add to Watchlist";
             const watchlistBtnClass = inWatchlist ? "watchlist-btn in-watchlist" : "watchlist-btn";
+            
             let modalHTML = `
                 <img src="${posterPath}" alt="${title}">
                 <div class="modal-details">
@@ -420,6 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="info-item"><strong>Runtime:</strong> ${runtime}</div>
                     <div class="info-item"><strong>Genres:</strong> ${genreNames}</div>
             `;
+            
             if (omdbData) {
                 if (omdbData.imdbRating && omdbData.imdbRating !== "N/A") {
                     modalHTML += `<div class="info-item"><strong>IMDb Rating:</strong> ${omdbData.imdbRating}/10</div>`;
@@ -431,73 +409,98 @@ document.addEventListener("DOMContentLoaded", () => {
                     modalHTML += `<div class="info-item"><strong>Director:</strong> ${omdbData.Director}</div>`;
                 }
             }
+            
             modalHTML += `<button class="${watchlistBtnClass}" id="toggle-watchlist">${watchlistBtnText}</button>`;
             modalHTML += `</div>`;
+            
             if (trailer) {
                 modalHTML += `<div class="modal-trailer"><h3>🎬 Trailer</h3><iframe src="https://www.youtube.com/embed/${trailer.key}" allowfullscreen title="${title} Trailer"></iframe></div>`;
             }
-            modalHTML += `<div class="modal-cast">`;
-            modalHTML += `<div class="cast-header"><h3>👥 Cast</h3></div>`;
+
+            // --- CAST SLIDER (CodePen style) ---
+            modalHTML += `<div class="modal-cast"><h3>👥 Cast</h3>`;
             if (creditsData.cast && creditsData.cast.length > 0) {
-                modalHTML += `<div class="cast-carousel-wrapper">`;
-                modalHTML += `<button class="carousel-btn cast-prev-btn" aria-label="Previous cast members">‹</button>`;
-                modalHTML += `<div class="cast-container">`;
-                creditsData.cast.slice(0, 12).forEach(cast => {
-                    const castImg = cast.profile_path ? `${baseImageUrl}${cast.profile_path}` : "https://via.placeholder.com/100x100?text=No+Image";
-                    modalHTML += `<div class="cast-card"><img src="${castImg}" alt="${cast.name}"><p>${cast.name}</p><p class="character">${cast.character}</p></div>`;
+                modalHTML += `<div class="slider-container" id="cast-slider">`;
+                modalHTML += `<div class="slide">`;
+                creditsData.cast.slice(0, 10).forEach(cast => {
+                    const castImg = cast.profile_path ? `${baseImageUrl}${cast.profile_path}` : "https://via.placeholder.com/200x300?text=No+Image";
+                    modalHTML += `
+                        <div class="item" style="background-image: url(${castImg});">
+                            <div class="content">
+                                <div class="name">${cast.name}</div>
+                                <div class="des">${cast.character}</div>
+                            </div>
+                        </div>`;
                 });
-                modalHTML += `</div>`;
-                modalHTML += `<button class="carousel-btn cast-next-btn" aria-label="Next cast members">›</button>`;
-                modalHTML += `</div>`;
+                modalHTML += `</div>`; // end .slide
+                modalHTML += `<div class="button">
+                                <button class="prev">◁</button>
+                                <button class="next">▷</button>
+                              </div>`;
+                modalHTML += `</div>`; // end .slider-container
             } else {
                 modalHTML += `<p>No cast information available.</p>`;
             }
             modalHTML += `</div>`;
-            modalHTML += `<div class="modal-similar">`;
-            modalHTML += `<div class="similar-header"><h3>🎞️ Similar</h3></div>`;
+
+            // --- SIMILAR SLIDER (CodePen style) ---
+            modalHTML += `<div class="modal-similar"><h3>🎞️ Similar</h3>`;
             if (similarData.results && similarData.results.length > 0) {
-                modalHTML += `<div class="similar-carousel-wrapper">`;
-                modalHTML += `<button class="carousel-btn similar-prev-btn" aria-label="Previous similar movies">‹</button>`;
-                modalHTML += `<div class="similar-container">`;
+                modalHTML += `<div class="slider-container" id="similar-slider">`;
+                modalHTML += `<div class="slide">`;
                 similarData.results.slice(0, 10).forEach(similar => {
-                    const similarImg = similar.poster_path ? `${baseImageUrl}${similar.poster_path}` : "https://via.placeholder.com/120x180?text=No+Image";
-                    const similarRating = similar.vote_average ? similar.vote_average.toFixed(1) : "N/A";
-                    const ratingClass = similar.vote_average ? getRatingClass(similar.vote_average) : "";
-                    
+                    const similarImg = similar.poster_path ? `${baseImageUrl}${similar.poster_path}` : "https://via.placeholder.com/200x300?text=No+Image";
+                    const simTitle = similar.title || similar.name;
+                    const simRating = similar.vote_average ? similar.vote_average.toFixed(1) : "N/A";
                     modalHTML += `
-                        <div class="similar-card" data-id="${similar.id}" data-type="${mediaType}">
-                            <img src="${similarImg}" alt="${similar.title || similar.name}">
-                            <div class="similar-info">
-                                <p>${similar.title || similar.name}</p>
-                                <span class="${ratingClass}">⭐ ${similarRating}</span>
+                        <div class="item" style="background-image: url(${similarImg});" data-id="${similar.id}" data-type="${mediaType}">
+                            <div class="content">
+                                <div class="name">${simTitle}</div>
+                                <div class="des">⭐ ${simRating}</div>
                             </div>
                         </div>`;
                 });
-                modalHTML += `</div>`;
-                modalHTML += `<button class="carousel-btn similar-next-btn" aria-label="Next similar movies">›</button>`;
-                modalHTML += `</div>`;
+                modalHTML += `</div>`; // end .slide
+                modalHTML += `<div class="button">
+                                <button class="prev">◁</button>
+                                <button class="next">▷</button>
+                              </div>`;
+                modalHTML += `</div>`; // end .slider-container
             } else {
                 modalHTML += `<p>No similar movies available.</p>`;
             }
             modalHTML += `</div>`;
+
+            // Modal එක render කරන්න
             modalBody.innerHTML = modalHTML;
-            
-// Setup carousel navigation for cast
-            const castContainer = modalBody.querySelector('.cast-container');
-            const castPrevBtn = modalBody.querySelector('.cast-prev-btn');
-            const castNextBtn = modalBody.querySelector('.cast-next-btn');
-            if (castContainer && castPrevBtn && castNextBtn) {
-                setupCarouselNavigation(castContainer, castPrevBtn, castNextBtn);
+
+            // --- CodePen SLIDER LOGIC ---
+            function setupCodepenSlider(sliderId) {
+                const slider = modalBody.querySelector(`#${sliderId}`);
+                if (!slider) return;
+
+                const nextBtn = slider.querySelector('.next');
+                const prevBtn = slider.querySelector('.prev');
+                const slide = slider.querySelector('.slide');
+
+                if (!nextBtn || !prevBtn || !slide) return;
+
+                nextBtn.addEventListener("click", () => {
+                    let items = slide.querySelectorAll(".item");
+                    slide.appendChild(items[0]);
+                });
+
+                prevBtn.addEventListener("click", () => {
+                    let items = slide.querySelectorAll(".item");
+                    slide.prepend(items[items.length - 1]);
+                });
             }
-            
-            // Setup carousel navigation for similar movies
-            const similarContainer = modalBody.querySelector('.similar-container');
-            const similarPrevBtn = modalBody.querySelector('.similar-prev-btn');
-            const similarNextBtn = modalBody.querySelector('.similar-next-btn');
-            if (similarContainer && similarPrevBtn && similarNextBtn) {
-                setupCarouselNavigation(similarContainer, similarPrevBtn, similarNextBtn);
-            }
-            
+
+            // Slider දෙකම initialize කරන්න
+            setupCodepenSlider('cast-slider');
+            setupCodepenSlider('similar-slider');
+
+            // Watchlist button එක
             document.getElementById("toggle-watchlist").addEventListener("click", (e) => {
                 const button = e.target;
                 if (isInWatchlist(itemId, mediaType)) {
@@ -510,14 +513,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     button.classList.add("in-watchlist");
                 }
             });
-            document.querySelectorAll(".similar-card").forEach(card => {
+
+            // Similar movie click කරන එක
+            modalBody.querySelectorAll("#similar-slider .item").forEach(card => {
                 card.addEventListener("click", () => {
-                    const id = parseInt(card.dataset.id);
-                    const type = card.dataset.type;
-                    closeModal();
-                    openModal(id, type);
+                    // Check if this item is the 'active' one (nth-child(2))
+                    const isActive = Array.from(card.parentElement.children).indexOf(card) === 1;
+                    
+                    if (isActive) {
+                        const id = parseInt(card.dataset.id);
+                        const type = card.dataset.type;
+                        closeModal();
+                        openModal(id, type);
+                    }
                 });
             });
+
         } catch (error) {
             console.error("Failed to load details:", error);
             modalBody.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--secondary-text-color);"><p>⚠️ Failed to load details.</p></div>`;
