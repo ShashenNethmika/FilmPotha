@@ -482,18 +482,18 @@ document.addEventListener("DOMContentLoaded", () => {
             modalHTML += `</div>`;
             modalBody.innerHTML = modalHTML;
             
-            // Setup carousel navigation for cast
-            const castContainer = document.querySelector('.cast-container');
-            const castPrevBtn = document.querySelector('.cast-prev-btn');
-            const castNextBtn = document.querySelector('.cast-next-btn');
+// Setup carousel navigation for cast
+            const castContainer = modalBody.querySelector('.cast-container');
+            const castPrevBtn = modalBody.querySelector('.cast-prev-btn');
+            const castNextBtn = modalBody.querySelector('.cast-next-btn');
             if (castContainer && castPrevBtn && castNextBtn) {
                 setupCarouselNavigation(castContainer, castPrevBtn, castNextBtn);
             }
             
             // Setup carousel navigation for similar movies
-            const similarContainer = document.querySelector('.similar-container');
-            const similarPrevBtn = document.querySelector('.similar-prev-btn');
-            const similarNextBtn = document.querySelector('.similar-next-btn');
+            const similarContainer = modalBody.querySelector('.similar-container');
+            const similarPrevBtn = modalBody.querySelector('.similar-prev-btn');
+            const similarNextBtn = modalBody.querySelector('.similar-next-btn');
             if (similarContainer && similarPrevBtn && similarNextBtn) {
                 setupCarouselNavigation(similarContainer, similarPrevBtn, similarNextBtn);
             }
