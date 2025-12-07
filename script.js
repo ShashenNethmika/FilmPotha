@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     // --- API Configuration ---
-    const tmdbApiKey = typeof CONFIG !== 'undefined' ? CONFIG.tmdbApiKey : '70d39d783bf0ed1a77563490c832c0a2';
-    const omdbApiKey = typeof CONFIG !== 'undefined' ? CONFIG.omdbApiKey : '84c5ac60';
+    const tmdbApiKey = typeof CONFIG !== 'undefined' ? CONFIG.tmdbApiKey : null;
+    const omdbApiKey = typeof CONFIG !== 'undefined' ? CONFIG.omdbApiKey : null;
     const baseApiUrl = 'https://api.themoviedb.org/3';
     const baseImageUrl = 'https://image.tmdb.org/t/p/w500';
     const omdbApiUrl = 'https://www.omdbapi.com/';
@@ -43,6 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const categoryTitle = document.getElementById("category-title");
     const popularTitle = document.getElementById("popular-title");
     const homeTitle = document.getElementById("home-title");
+    const loadMoreContainer = document.getElementById("load-more-container");
+    const loadMoreBtn = document.getElementById("load-more-btn");
 
     // Modal Elements
     const modalOverlay = document.getElementById("modal-overlay");
@@ -55,6 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentModalMediaType = null;
     let searchDebounceTimer = null;
     let currentGenreId = null;
+    let currentPage = 1;
+    let currentSearchQuery = "";
+    let activeView = 'popular'; // 'popular', 'search', 'category'
 
     // --- Theme Toggle ---
     const savedTheme = localStorage.getItem("theme");
@@ -77,8 +82,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentMode !== 'movie') {
             currentMode = 'movie';
             updateToggleButtons();
-            loadPopular();
-            if (currentGenreId) loadByGenre(currentGenreId);
+            if (activeView === 'category' && currentGenreId) {
+                loadByGenre(currentGenreId);
+            } else if (activeView === 'search' && currentSearchQuery) {
+                searchMovies(currentSearchQuery);
+            } else {
+                loadPopular();
+            }
         }
     });
 
@@ -86,8 +96,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentMode !== 'tv') {
             currentMode = 'tv';
             updateToggleButtons();
-            loadPopular();
-            if (currentGenreId) loadByGenre(currentGenreId);
+             if (activeView === 'category' && currentGenreId) {
+                loadByGenre(currentGenreId);
+            } else if (activeView === 'search' && currentSearchQuery) {
+                searchMovies(currentSearchQuery);
+            } else {
+                loadPopular();
+            }
         }
     });
 
@@ -154,8 +169,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const promises = watchlist.map(item => fetchFromApi(`/${item.type}/${item.id}`));
-            const items = await Promise.all(promises);
+            const items = [];
+            const batchSize = 5;
+            for (let i = 0; i < watchlist.length; i += batchSize) {
+                const batch = watchlist.slice(i, i + batchSize);
+                const batchPromises = batch.map(item => fetchFromApi(`/${item.type}/${item.id}`));
+                const batchResults = await Promise.all(batchPromises);
+                items.push(...batchResults);
+
+                // Optional delay to be extra safe, but batching alone helps significantly
+                // if (i + batchSize < watchlist.length) await new Promise(resolve => setTimeout(resolve, 300));
+            }
             displayMovies(items, watchlistContainer);
         } catch (error) {
             showError(watchlistContainer, "Failed to load watchlist");
@@ -163,13 +187,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Utility Functions ---
-    function showLoading(container) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: var(--secondary-text-color);">
-                <div class="loading-spinner"></div>
-                <p style="margin-top: 15px;">Loading...</p>
-            </div>
-        `;
+    function showLoading(container, append = false) {
+        if (!append) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--secondary-text-color);">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 15px;">Loading...</p>
+                </div>
+            `;
+        }
     }
 
     function showError(container, message) {
@@ -251,10 +277,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return card;
     }
 
-    function displayMovies(movies, container) {
-        container.innerHTML = "";
+    function displayMovies(movies, container, append = false) {
+        if (!append) container.innerHTML = "";
         if (!movies || movies.length === 0) {
-            showError(container, "No results found.");
+            if (!append) showError(container, "No results found.");
             return;
         }
         movies.forEach(movie => {
@@ -264,21 +290,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Popular Movies/TV ---
-    async function loadPopular() {
-        showLoading(popularContainer);
-        popularSection.style.display = "block";
-        watchlistSection.style.display = "none";
-        const url = currentMode === "movie" ? '/movie/popular' : '/tv/popular';
+    async function loadPopular(page = 1) {
+        activeView = 'popular';
+        if (page === 1) {
+            currentPage = 1;
+            showLoading(popularContainer);
+            popularSection.style.display = "block";
+            watchlistSection.style.display = "none";
+            categorySection.style.display = "none";
+            searchSection.style.display = "none";
+            loadMoreContainer.style.display = "none";
+        }
+
+        const url = currentMode === "movie" ? `/movie/popular?page=${page}` : `/tv/popular?page=${page}`;
         try {
             const data = await fetchFromApi(url);
-            displayMovies(data.results, popularContainer);
+            displayMovies(data.results, popularContainer, page > 1);
+            if (data.page < data.total_pages) {
+                loadMoreContainer.style.display = "block";
+            } else {
+                loadMoreContainer.style.display = "none";
+            }
         } catch (error) {
             showError(popularContainer, error.message || "Failed to load popular content.");
         }
     }
 
     // --- Search Functionality ---
-    async function searchMovies(query) {
+    async function searchMovies(query, page = 1) {
         if (!query.trim()) {
             searchSection.style.display = "none";
             categorySection.style.display = "none";
@@ -287,15 +326,28 @@ document.addEventListener("DOMContentLoaded", () => {
             loadPopular();
             return;
         }
-        showLoading(resultsContainer);
-        searchSection.style.display = "block";
-        categorySection.style.display = "none";
-        popularSection.style.display = "none";
-        watchlistSection.style.display = "none";
+        activeView = 'search';
+        currentSearchQuery = query;
+
+        if (page === 1) {
+            currentPage = 1;
+            showLoading(resultsContainer);
+            searchSection.style.display = "block";
+            categorySection.style.display = "none";
+            popularSection.style.display = "none";
+            watchlistSection.style.display = "none";
+            loadMoreContainer.style.display = "none";
+        }
+
         try {
-            const data = await fetchFromApi(`/search/multi?query=${encodeURIComponent(query)}`);
+            const data = await fetchFromApi(`/search/multi?query=${encodeURIComponent(query)}&page=${page}`);
             const filteredResults = data.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
-            displayMovies(filteredResults, resultsContainer);
+            displayMovies(filteredResults, resultsContainer, page > 1);
+            if (data.page < data.total_pages) {
+                loadMoreContainer.style.display = "block";
+            } else {
+                loadMoreContainer.style.display = "none";
+            }
         } catch (error) {
             showError(resultsContainer, error.message || "Failed to search.");
         }
@@ -332,20 +384,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Load by Genre ---
-    async function loadByGenre(genreId) {
+    async function loadByGenre(genreId, page = 1) {
+        activeView = 'category';
         currentGenreId = genreId;
         const genre = genres.find(g => g.id === genreId);
         const modeText = currentMode === 'movie' ? 'Movies' : 'TV Shows';
         categoryTitle.textContent = `${genre.name} ${modeText}`;
-        showLoading(categoryMoviesContainer);
-        categorySection.style.display = "block";
-        searchSection.style.display = "none";
-        popularSection.style.display = "none";
-        watchlistSection.style.display = "none";
+
+        if (page === 1) {
+            currentPage = 1;
+            showLoading(categoryMoviesContainer);
+            categorySection.style.display = "block";
+            searchSection.style.display = "none";
+            popularSection.style.display = "none";
+            watchlistSection.style.display = "none";
+            loadMoreContainer.style.display = "none";
+        }
+
         const endpoint = currentMode === 'movie' ? '/discover/movie' : '/discover/tv';
         try {
-            const data = await fetchFromApi(`${endpoint}?with_genres=${genreId}&sort_by=popularity.desc`);
-            displayMovies(data.results, categoryMoviesContainer);
+            const data = await fetchFromApi(`${endpoint}?with_genres=${genreId}&sort_by=popularity.desc&page=${page}`);
+            displayMovies(data.results, categoryMoviesContainer, page > 1);
+             if (data.page < data.total_pages) {
+                loadMoreContainer.style.display = "block";
+            } else {
+                loadMoreContainer.style.display = "none";
+            }
         } catch (error) {
             showError(categoryMoviesContainer, error.message || "Failed to load by category.");
         }
@@ -379,8 +443,12 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (mediaType === 'movie' && item.runtime) {
                 runtime = `${item.runtime} min`;
-            } else if (mediaType === 'tv' && item.episode_run_time && item.episode_run_time.length > 0) {
-                runtime = `${item.episode_run_time[0]} min (episode)`;
+            } else if (mediaType === 'tv') {
+                if (item.episode_run_time && item.episode_run_time.length > 0) {
+                    runtime = `${item.episode_run_time[0]} min (episode)`;
+                } else {
+                    runtime = "N/A";
+                }
             }
             
             const genreNames = item.genres.map(g => g.name).join(", ") || "N/A";
@@ -420,24 +488,42 @@ document.addEventListener("DOMContentLoaded", () => {
             // --- CAST SLIDER (CodePen style) ---
             modalHTML += `<div class="modal-cast"><h3>👥 Cast</h3>`;
             if (creditsData.cast && creditsData.cast.length > 0) {
-                modalHTML += `<div class="slider-container" id="cast-slider">`;
-                modalHTML += `<div class="slide">`;
-                creditsData.cast.slice(0, 10).forEach(cast => {
-                    const castImg = cast.profile_path ? `${baseImageUrl}${cast.profile_path}` : "https://via.placeholder.com/200x300?text=No+Image";
-                    modalHTML += `
-                        <div class="item" style="background-image: url(${castImg});">
-                            <div class="content">
-                                <div class="name">${cast.name}</div>
-                                <div class="des">${cast.character}</div>
-                            </div>
-                        </div>`;
-                });
-                modalHTML += `</div>`; // end .slide
-                modalHTML += `<div class="button">
-                                <button class="prev">◁</button>
-                                <button class="next">▷</button>
-                              </div>`;
-                modalHTML += `</div>`; // end .slider-container
+                if (creditsData.cast.length < 5) {
+                    // Render static list if cast is small
+                    modalHTML += `<div class="static-cast-list">`;
+                    creditsData.cast.forEach(cast => {
+                        const castImg = cast.profile_path ? `${baseImageUrl}${cast.profile_path}` : "https://via.placeholder.com/200x300?text=No+Image";
+                        modalHTML += `
+                            <div class="static-cast-item">
+                                <img src="${castImg}" alt="${cast.name}">
+                                <div class="static-cast-info">
+                                    <div class="name">${cast.name}</div>
+                                    <div class="character">${cast.character}</div>
+                                </div>
+                            </div>`;
+                    });
+                    modalHTML += `</div>`;
+                } else {
+                    // Render slider
+                    modalHTML += `<div class="slider-container" id="cast-slider">`;
+                    modalHTML += `<div class="slide">`;
+                    creditsData.cast.slice(0, 10).forEach(cast => {
+                        const castImg = cast.profile_path ? `${baseImageUrl}${cast.profile_path}` : "https://via.placeholder.com/200x300?text=No+Image";
+                        modalHTML += `
+                            <div class="item" style="background-image: url(${castImg});">
+                                <div class="content">
+                                    <div class="name">${cast.name}</div>
+                                    <div class="des">${cast.character}</div>
+                                </div>
+                            </div>`;
+                    });
+                    modalHTML += `</div>`; // end .slide
+                    modalHTML += `<div class="button">
+                                    <button class="prev">◁</button>
+                                    <button class="next">▷</button>
+                                  </div>`;
+                    modalHTML += `</div>`; // end .slider-container
+                }
             } else {
                 modalHTML += `<p>No cast information available.</p>`;
             }
@@ -559,6 +645,18 @@ document.addEventListener("DOMContentLoaded", () => {
         popularSection.style.display = "block";
         searchInput.value = ""; // Clear search input
         loadPopular();
+    });
+
+    // --- Load More Event Listener ---
+    loadMoreBtn.addEventListener("click", () => {
+        currentPage++;
+        if (activeView === 'popular') {
+            loadPopular(currentPage);
+        } else if (activeView === 'search') {
+            searchMovies(currentSearchQuery, currentPage);
+        } else if (activeView === 'category') {
+            loadByGenre(currentGenreId, currentPage);
+        }
     });
 
     // --- Initialize App ---
